@@ -14,6 +14,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@nohardtext/detect-engine": "workspace:*",
     "@nohardtext/report-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
   }
 }
