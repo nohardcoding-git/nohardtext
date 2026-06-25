@@ -1,6 +1,14 @@
 import { parse } from "@babel/parser";
-import traverse, { type NodePath } from "@babel/traverse";
+import traverseModule from "@babel/traverse";
+import type { NodePath, TraverseOptions } from "@babel/traverse";
 import type { File, JSXText } from "@babel/types";
+
+type TraverseFn = (parent: File, opts: TraverseOptions) => void;
+
+const traverse = (
+  (traverseModule as unknown as { default?: TraverseFn }).default ??
+  traverseModule
+) as unknown as TraverseFn;
 
 export interface JsxTextNode {
   text: string;

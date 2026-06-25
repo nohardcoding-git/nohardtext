@@ -1,6 +1,7 @@
 // src/index.ts
 import { parse } from "@babel/parser";
-import traverse from "@babel/traverse";
+import traverseModule from "@babel/traverse";
+var traverse = traverseModule.default ?? traverseModule;
 function parseSource(source) {
   return parse(source, {
     sourceType: "module",
