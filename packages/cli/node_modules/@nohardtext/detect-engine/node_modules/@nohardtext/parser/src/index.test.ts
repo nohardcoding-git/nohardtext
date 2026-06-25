@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { collectJsxTextNodes, parseSource } from "./index";
+import {
+  collectJsxAttributeStringValues,
+  collectJsxTextNodes,
+  parseSource
+} from "./index";
 
 describe("@nohardtext/parser", () => {
   it("parses TSX source", () => {
@@ -23,5 +27,25 @@ describe("@nohardtext/parser", () => {
 
     expect(nodes).toHaveLength(2);
     expect(nodes.map((node) => node.text)).toEqual(["Welcome", "Start Game"]);
+  });
+
+  it("collects selected JSX string attributes", () => {
+    const nodes = collectJsxAttributeStringValues(
+      `
+        export default function App() {
+          return (
+            <>
+              <input placeholder="Search..." />
+              <div className="hero" />
+            </>
+          );
+        }
+      `,
+      ["placeholder"]
+    );
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0]?.name).toBe("placeholder");
+    expect(nodes[0]?.value).toBe("Search...");
   });
 });
