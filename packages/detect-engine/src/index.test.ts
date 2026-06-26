@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { detect, detectJsxText, detectPlaceholderText } from "./index";
+import {
+  detect,
+  detectJsxText,
+  detectPlaceholderText,
+  detectTitleAttributeText
+} from "./index";
 import type { Rule } from "@nohardtext/rule-engine";
 
 describe("@nohardtext/detect-engine", () => {
@@ -28,11 +33,7 @@ describe("@nohardtext/detect-engine", () => {
   it("detects hardcoded placeholder text", () => {
     const findings = detectPlaceholderText(
       "src/App.tsx",
-      `
-        export default function App() {
-          return <input placeholder="Search..." />;
-        }
-      `
+      `export default function App() { return <input placeholder="Search..." />; }`
     );
 
     expect(findings).toHaveLength(1);
@@ -40,7 +41,18 @@ describe("@nohardtext/detect-engine", () => {
     expect(findings[0]?.message).toContain("Search...");
   });
 
-  it("detects JSX text and placeholder together", () => {
+  it("detects hardcoded title attribute text", () => {
+    const findings = detectTitleAttributeText(
+      "src/App.tsx",
+      `export default function App() { return <button title="Start the game">Start Game</button>; }`
+    );
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.ruleId).toBe("NHT1003");
+    expect(findings[0]?.message).toContain("Start the game");
+  });
+
+  it("detects JSX text, placeholder, and title together", () => {
     const result = detect({
       filePath: "src/App.tsx",
       sourceText: `
@@ -48,6 +60,7 @@ describe("@nohardtext/detect-engine", () => {
           return (
             <>
               <h1>Welcome</h1>
+              <button title="Start the game">Start Game</button>
               <input placeholder="Search..." />
             </>
           );
@@ -57,7 +70,9 @@ describe("@nohardtext/detect-engine", () => {
 
     expect(result.findings.map((finding) => finding.ruleId)).toEqual([
       "NHT1001",
-      "NHT1002"
+      "NHT1001",
+      "NHT1002",
+      "NHT1003"
     ]);
   });
 
