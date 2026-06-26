@@ -8,6 +8,16 @@ import { createReportSummary, type ReportSummary } from "@nohardtext/report-engi
 
 const SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
+const IGNORED_DIRECTORIES = new Set([
+  "node_modules",
+  "dist",
+  "coverage",
+  ".git",
+  ".next",
+  "build",
+  "out"
+]);
+
 const SEVERITY_ORDER: Severity[] = ["info", "low", "medium", "high", "critical"];
 
 export interface ScanOutput {
@@ -23,6 +33,10 @@ export interface CliOptions {
 
 export function getCliBanner(): string {
   return "NoHardText CLI";
+}
+
+export function shouldSkipDirectory(directoryName: string): boolean {
+  return IGNORED_DIRECTORIES.has(directoryName);
 }
 
 function isSupportedFile(filePath: string): boolean {
@@ -41,6 +55,10 @@ function collectFiles(targetPath: string): string[] {
   }
 
   return readdirSync(targetPath).flatMap((entry) => {
+    if (shouldSkipDirectory(entry)) {
+      return [];
+    }
+
     const fullPath = join(targetPath, entry);
     const entryStat = statSync(fullPath);
 

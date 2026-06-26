@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { getCliBanner, runRulesList, runScan, runScanJson, shouldFail } from "./index";
+import {
+  getCliBanner,
+  runRulesList,
+  runScan,
+  runScanJson,
+  shouldFail,
+  shouldSkipDirectory
+} from "./index";
 import type { Finding } from "@nohardtext/domain";
 
 describe("@nohardtext/cli", () => {
   it("returns the CLI banner", () => {
     expect(getCliBanner()).toBe("NoHardText CLI");
+  });
+
+  it("skips generated and dependency directories", () => {
+    expect(shouldSkipDirectory("node_modules")).toBe(true);
+    expect(shouldSkipDirectory("dist")).toBe(true);
+    expect(shouldSkipDirectory(".git")).toBe(true);
+    expect(shouldSkipDirectory("src")).toBe(false);
   });
 
   it("lists supported rules", () => {

@@ -6,9 +6,21 @@ import { join, relative } from "path";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import { createReportSummary } from "@nohardtext/report-engine";
 var SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
+var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set([
+  "node_modules",
+  "dist",
+  "coverage",
+  ".git",
+  ".next",
+  "build",
+  "out"
+]);
 var SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"];
 function getCliBanner() {
   return "NoHardText CLI";
+}
+function shouldSkipDirectory(directoryName) {
+  return IGNORED_DIRECTORIES.has(directoryName);
 }
 function isSupportedFile(filePath) {
   return SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension));
@@ -22,6 +34,9 @@ function collectFiles(targetPath) {
     return isSupportedFile(targetPath) ? [targetPath] : [];
   }
   return readdirSync(targetPath).flatMap((entry) => {
+    if (shouldSkipDirectory(entry)) {
+      return [];
+    }
     const fullPath = join(targetPath, entry);
     const entryStat = statSync(fullPath);
     if (entryStat.isDirectory()) {
@@ -173,5 +188,6 @@ export {
   runRulesList,
   runScan,
   runScanJson,
-  shouldFail
+  shouldFail,
+  shouldSkipDirectory
 };

@@ -12,6 +12,7 @@ interface CliOptions {
     failOn?: Severity;
 }
 declare function getCliBanner(): string;
+declare function shouldSkipDirectory(directoryName: string): boolean;
 declare function shouldFail(findings: Finding[], failOn?: Severity): boolean;
 declare function runRulesList(): string;
 declare function createScanOutput(targetPath: string, cwd?: string): ScanOutput;
@@ -19,4 +20,4 @@ declare function runScan(targetPath: string, cwd?: string, options?: CliOptions)
 declare function runScanJson(targetPath: string, cwd?: string): string;
 declare function runCli(args?: string[]): Promise<void>;
 
-export { type CliOptions, type ScanOutput, createScanOutput, getCliBanner, runCli, runRulesList, runScan, runScanJson, shouldFail };
+export { type CliOptions, type ScanOutput, createScanOutput, getCliBanner, runCli, runRulesList, runScan, runScanJson, shouldFail, shouldSkipDirectory };
