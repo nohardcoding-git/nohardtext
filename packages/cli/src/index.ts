@@ -2,16 +2,23 @@
 
 import { existsSync, readFileSync, statSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
-import type { Finding } from "@nohardtext/domain";
+import type { Finding, Severity } from "@nohardtext/domain";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import { createReportSummary, type ReportSummary } from "@nohardtext/report-engine";
 
 const SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
+const SEVERITY_ORDER: Severity[] = ["info", "low", "medium", "high", "critical"];
+
 export interface ScanOutput {
   scannedFiles: number;
   findings: Finding[];
   summary: ReportSummary;
+}
+
+export interface CliOptions {
+  json: boolean;
+  failOn?: Severity;
 }
 
 export function getCliBanner(): string {
@@ -43,6 +50,51 @@ function collectFiles(targetPath: string): string[] {
 
     return isSupportedFile(fullPath) ? [fullPath] : [];
   });
+}
+
+function parseOptions(args: string[]): CliOptions {
+  const failOnIndex = args.indexOf("--fail-on");
+  const failOnValue = failOnIndex >= 0 ? args[failOnIndex + 1] : undefined;
+
+  if (failOnValue && !SEVERITY_ORDER.includes(failOnValue as Severity)) {
+    throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
+  }
+
+  return {
+    json: args.includes("--json"),
+    failOn: failOnValue as Severity | undefined
+  };
+}
+
+function stripOptions(args: string[]): string[] {
+  const result: string[] = [];
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (arg === "--json") {
+      continue;
+    }
+
+    if (arg === "--fail-on") {
+      index += 1;
+      continue;
+    }
+
+    result.push(arg);
+  }
+
+  return result;
+}
+
+export function shouldFail(findings: Finding[], failOn?: Severity): boolean {
+  if (!failOn) {
+    return false;
+  }
+
+  const threshold = SEVERITY_ORDER.indexOf(failOn);
+
+  return findings.some((finding) => SEVERITY_ORDER.indexOf(finding.severity) >= threshold);
 }
 
 export function runRulesList(): string {
@@ -86,7 +138,7 @@ export function createScanOutput(targetPath: string, cwd = process.cwd()): ScanO
   };
 }
 
-export function runScan(targetPath: string, cwd = process.cwd()): string {
+export function runScan(targetPath: string, cwd = process.cwd(), options: CliOptions = { json: false }): string {
   const ruleMetadata = new Map(
     getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
   );
@@ -105,6 +157,12 @@ export function runScan(targetPath: string, cwd = process.cwd()): string {
     `Localization score: ${summary.healthScore.score} / 100`,
     ""
   ];
+
+  if (options.failOn) {
+    lines.push(`Fail on: ${options.failOn}`);
+    lines.push(`CI result: ${shouldFail(output.findings, options.failOn) ? "failed" : "passed"}`);
+    lines.push("");
+  }
 
   for (const finding of output.findings) {
     const metadata = ruleMetadata.get(finding.ruleId);
@@ -127,8 +185,8 @@ export function runScanJson(targetPath: string, cwd = process.cwd()): string {
 }
 
 export async function runCli(args = process.argv.slice(2)): Promise<void> {
-  const json = args.includes("--json");
-  const normalizedArgs = args.filter((arg) => arg !== "--json");
+  const options = parseOptions(args);
+  const normalizedArgs = stripOptions(args);
 
   const [command, target = "."] = normalizedArgs;
 
@@ -136,6 +194,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
     console.log("Usage:");
     console.log("  nohardtext scan <path>");
     console.log("  nohardtext scan <path> --json");
+    console.log("  nohardtext scan <path> --fail-on high");
     console.log("  nohardtext rules");
     return;
   }
@@ -146,7 +205,14 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
   }
 
   if (command === "scan") {
-    console.log(json ? runScanJson(target) : runScan(target));
+    const output = createScanOutput(target);
+
+    console.log(options.json ? JSON.stringify(output, null, 2) : runScan(target, process.cwd(), options));
+
+    if (shouldFail(output.findings, options.failOn)) {
+      process.exitCode = 1;
+    }
+
     return;
   }
 

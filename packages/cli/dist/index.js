@@ -6,6 +6,7 @@ import { join, relative } from "path";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import { createReportSummary } from "@nohardtext/report-engine";
 var SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
+var SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"];
 function getCliBanner() {
   return "NoHardText CLI";
 }
@@ -28,6 +29,39 @@ function collectFiles(targetPath) {
     }
     return isSupportedFile(fullPath) ? [fullPath] : [];
   });
+}
+function parseOptions(args) {
+  const failOnIndex = args.indexOf("--fail-on");
+  const failOnValue = failOnIndex >= 0 ? args[failOnIndex + 1] : void 0;
+  if (failOnValue && !SEVERITY_ORDER.includes(failOnValue)) {
+    throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
+  }
+  return {
+    json: args.includes("--json"),
+    failOn: failOnValue
+  };
+}
+function stripOptions(args) {
+  const result = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--json") {
+      continue;
+    }
+    if (arg === "--fail-on") {
+      index += 1;
+      continue;
+    }
+    result.push(arg);
+  }
+  return result;
+}
+function shouldFail(findings, failOn) {
+  if (!failOn) {
+    return false;
+  }
+  const threshold = SEVERITY_ORDER.indexOf(failOn);
+  return findings.some((finding) => SEVERITY_ORDER.indexOf(finding.severity) >= threshold);
 }
 function runRulesList() {
   const rules = getBuiltInRuleMetadata();
@@ -62,7 +96,7 @@ function createScanOutput(targetPath, cwd = process.cwd()) {
     summary: createReportSummary({ findings })
   };
 }
-function runScan(targetPath, cwd = process.cwd()) {
+function runScan(targetPath, cwd = process.cwd(), options = { json: false }) {
   const ruleMetadata = new Map(
     getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
   );
@@ -79,6 +113,11 @@ function runScan(targetPath, cwd = process.cwd()) {
     `Localization score: ${summary.healthScore.score} / 100`,
     ""
   ];
+  if (options.failOn) {
+    lines.push(`Fail on: ${options.failOn}`);
+    lines.push(`CI result: ${shouldFail(output.findings, options.failOn) ? "failed" : "passed"}`);
+    lines.push("");
+  }
   for (const finding of output.findings) {
     const metadata = ruleMetadata.get(finding.ruleId);
     lines.push("----------------------------");
@@ -96,13 +135,14 @@ function runScanJson(targetPath, cwd = process.cwd()) {
   return JSON.stringify(createScanOutput(targetPath, cwd), null, 2);
 }
 async function runCli(args = process.argv.slice(2)) {
-  const json = args.includes("--json");
-  const normalizedArgs = args.filter((arg) => arg !== "--json");
+  const options = parseOptions(args);
+  const normalizedArgs = stripOptions(args);
   const [command, target = "."] = normalizedArgs;
   if (!command || command === "--help" || command === "-h") {
     console.log("Usage:");
     console.log("  nohardtext scan <path>");
     console.log("  nohardtext scan <path> --json");
+    console.log("  nohardtext scan <path> --fail-on high");
     console.log("  nohardtext rules");
     return;
   }
@@ -111,7 +151,11 @@ async function runCli(args = process.argv.slice(2)) {
     return;
   }
   if (command === "scan") {
-    console.log(json ? runScanJson(target) : runScan(target));
+    const output = createScanOutput(target);
+    console.log(options.json ? JSON.stringify(output, null, 2) : runScan(target, process.cwd(), options));
+    if (shouldFail(output.findings, options.failOn)) {
+      process.exitCode = 1;
+    }
     return;
   }
   throw new Error(`Unknown command: ${command}`);
@@ -128,5 +172,6 @@ export {
   runCli,
   runRulesList,
   runScan,
-  runScanJson
+  runScanJson,
+  shouldFail
 };
