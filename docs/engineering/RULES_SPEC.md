@@ -1,48 +1,52 @@
 # Rules Specification
 
-## Rule Categories
+## Current Rule Catalog
 
 ### Localization
 
-- NHT1001 - JSX Text
-- NHT1002 - Placeholder
-- NHT1003 - Title Attribute
-- NHT1004 - ARIA Label
-- NHT1005 - Toast Message
-- NHT1006 - Dialog Text
-- NHT1007 - Alert
-- NHT1008 - Confirm
-- NHT1009 - Validation Message
-- NHT1010 - User-facing Error
-
-### Accessibility
-
-(TODO)
-
-### UX
-
-(TODO)
-
-### SEO
-
-(TODO)
+| Rule ID | Name | Status | Description |
+|---|---|---|---|
+| NHT1001 | JSX Text | Implemented | Detects hardcoded user-facing text inside JSX nodes. |
+| NHT1002 | Placeholder Attribute | Implemented | Detects hardcoded `placeholder` attribute values. |
+| NHT1003 | Title Attribute | Implemented | Detects hardcoded `title` attribute values. |
+| NHT1004 | ARIA Label | Implemented | Detects hardcoded `aria-label` attribute values. |
+| NHT1005 | Alt Attribute | Implemented | Detects hardcoded `alt` attribute values. |
 
 ---
 
-# Rule Template
+## Rule Template
 
-## Rule ID
+Each rule should define:
 
-## Name
+- Rule ID
+- Name
+- Category
+- Severity
+- Description
+- Why it matters
+- Detection logic
+- Examples
+- False positives
+- Auto-fix support
+- Configuration options
 
-## Description
+---
 
-## Severity
+## NHT1001 - JSX Text
 
-## Category
+### Category
 
-## Examples
+Localization
 
-## Auto Fix
+### Severity
 
-## Configuration
+High
+
+### Description
+
+Detects hardcoded text inside JSX nodes.
+
+### Example
+
+```tsx
+<h1>Welcome</h1>
