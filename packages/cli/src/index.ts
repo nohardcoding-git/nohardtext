@@ -61,6 +61,10 @@ export function runRulesList(): string {
 }
 
 export function runScan(targetPath: string, cwd = process.cwd()): string {
+  const ruleMetadata = new Map(
+    getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
+  );
+
   const files = collectFiles(targetPath);
   const findings = files.flatMap((filePath) => {
     const sourceText = readFileSync(filePath, "utf8");
@@ -82,9 +86,13 @@ export function runScan(targetPath: string, cwd = process.cwd()): string {
   ];
 
   for (const finding of findings) {
+    const metadata = ruleMetadata.get(finding.ruleId);
+
     lines.push("----------------------------");
-    lines.push(finding.ruleId);
+    lines.push(`${finding.ruleId}${metadata ? ` - ${metadata.name}` : ""}`);
     lines.push(`${finding.location.filePath}:${finding.location.startLine}:${finding.location.startColumn}`);
+    lines.push(`Severity: ${finding.severity}`);
+    lines.push(`Category: ${finding.category}`);
     lines.push(finding.message);
     lines.push(finding.explanation);
     lines.push("");
