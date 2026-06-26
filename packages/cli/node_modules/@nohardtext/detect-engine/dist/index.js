@@ -3,8 +3,38 @@ import { runRules } from "@nohardtext/rule-engine";
 
 // src/rules/string-attribute.ts
 import { collectJsxAttributeStringValues } from "@nohardtext/parser";
+
+// src/rules/text-utils.ts
+var LETTER_PATTERN = /\p{L}/u;
+var URL_OR_EMAIL_PATTERN = /^(https?:\/\/|mailto:|www\.|\S+@\S+\.\S+)/iu;
+var VERSION_TOKEN_PATTERN = /^v?\d+(?:[._-]\d+)*$/iu;
+var TECHNICAL_TOKEN_WITH_DIGIT_PATTERN = /^[a-z]+[a-z\d._-]*\d[a-z\d._-]*$/iu;
+function normalizeUserFacingText(value) {
+  return value.replace(/\s+/g, " ").trim();
+}
+function isProbablyLocalizableText(value) {
+  const text = normalizeUserFacingText(value);
+  if (!text) {
+    return false;
+  }
+  if (URL_OR_EMAIL_PATTERN.test(text)) {
+    return false;
+  }
+  if (!LETTER_PATTERN.test(text)) {
+    return false;
+  }
+  if (VERSION_TOKEN_PATTERN.test(text)) {
+    return false;
+  }
+  if (TECHNICAL_TOKEN_WITH_DIGIT_PATTERN.test(text)) {
+    return false;
+  }
+  return true;
+}
+
+// src/rules/string-attribute.ts
 function detectStringAttribute(filePath, sourceText, config) {
-  return collectJsxAttributeStringValues(sourceText, [config.attributeName]).map((node, index) => ({
+  return collectJsxAttributeStringValues(sourceText, [config.attributeName]).filter((node) => isProbablyLocalizableText(node.value)).map((node, index) => ({
     id: `${filePath}:${config.ruleId}:${node.startLine}:${node.startColumn}:${index}`,
     ruleId: config.ruleId,
     severity: "high",
@@ -19,7 +49,11 @@ function detectStringAttribute(filePath, sourceText, config) {
       endColumn: node.endColumn
     },
     fixable: true,
-    suggestions: [{ message: config.suggestion }]
+    suggestions: [
+      {
+        message: config.suggestion
+      }
+    ]
   }));
 }
 
@@ -48,7 +82,7 @@ function detectAriaLabelText(filePath, sourceText) {
 // src/rules/jsx-text.ts
 import { collectJsxTextNodes } from "@nohardtext/parser";
 function detectJsxText(filePath, sourceText) {
-  return collectJsxTextNodes(sourceText).map((node, index) => ({
+  return collectJsxTextNodes(sourceText).filter((node) => isProbablyLocalizableText(node.text)).map((node, index) => ({
     id: `${filePath}:NHT1001:${node.startLine}:${node.startColumn}:${index}`,
     ruleId: "NHT1001",
     severity: "high",
@@ -63,7 +97,11 @@ function detectJsxText(filePath, sourceText) {
       endColumn: node.endColumn
     },
     fixable: true,
-    suggestions: [{ message: "Extract this text to a localization key." }]
+    suggestions: [
+      {
+        message: "Replace the text with a localized translation key."
+      }
+    ]
   }));
 }
 
