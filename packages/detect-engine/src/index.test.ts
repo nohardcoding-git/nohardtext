@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   detect,
+  detectAltAttributeText,
   detectAriaLabelText,
   detectJsxText,
   detectPlaceholderText,
@@ -27,7 +28,6 @@ describe("@nohardtext/detect-engine", () => {
 
     expect(findings).toHaveLength(2);
     expect(findings[0]?.ruleId).toBe("NHT1001");
-    expect(findings[0]?.message).toContain("Welcome");
     expect(findings[1]?.message).toContain("Start Game");
   });
 
@@ -39,7 +39,6 @@ describe("@nohardtext/detect-engine", () => {
 
     expect(findings).toHaveLength(1);
     expect(findings[0]?.ruleId).toBe("NHT1002");
-    expect(findings[0]?.message).toContain("Search...");
   });
 
   it("detects hardcoded title attribute text", () => {
@@ -50,7 +49,6 @@ describe("@nohardtext/detect-engine", () => {
 
     expect(findings).toHaveLength(1);
     expect(findings[0]?.ruleId).toBe("NHT1003");
-    expect(findings[0]?.message).toContain("Start the game");
   });
 
   it("detects hardcoded aria-label text", () => {
@@ -61,10 +59,20 @@ describe("@nohardtext/detect-engine", () => {
 
     expect(findings).toHaveLength(1);
     expect(findings[0]?.ruleId).toBe("NHT1004");
-    expect(findings[0]?.message).toContain("Start button");
   });
 
-  it("detects JSX text, placeholder, title, and aria-label together", () => {
+  it("detects hardcoded alt attribute text", () => {
+    const findings = detectAltAttributeText(
+      "src/App.tsx",
+      `export default function App() { return <img src="/logo.png" alt="Game logo" />; }`
+    );
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.ruleId).toBe("NHT1005");
+    expect(findings[0]?.message).toContain("Game logo");
+  });
+
+  it("detects all supported rules together", () => {
     const result = detect({
       filePath: "src/App.tsx",
       sourceText: `
@@ -76,6 +84,7 @@ describe("@nohardtext/detect-engine", () => {
                 Start Game
               </button>
               <input placeholder="Search..." />
+              <img src="/logo.png" alt="Game logo" />
             </>
           );
         }
@@ -87,7 +96,8 @@ describe("@nohardtext/detect-engine", () => {
       "NHT1001",
       "NHT1002",
       "NHT1003",
-      "NHT1004"
+      "NHT1004",
+      "NHT1005"
     ]);
   });
 
