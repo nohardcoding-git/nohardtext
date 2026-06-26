@@ -105,31 +105,84 @@ export interface JsxExpressionStringNode {
   endColumn: number;
 }
 
+function pushJsxExpressionString(
+  nodes: JsxExpressionStringNode[],
+  expression: any,
+  value: string
+): void {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return;
+  }
+
+  nodes.push({
+    value: trimmed,
+    startLine: expression.loc?.start.line ?? 1,
+    startColumn: expression.loc?.start.column ?? 0,
+    endLine: expression.loc?.end.line ?? expression.loc?.start.line ?? 1,
+    endColumn: expression.loc?.end.column ?? expression.loc?.start.column ?? 0
+  });
+}
+
+function collectExpressionStrings(expression: any, nodes: JsxExpressionStringNode[]): void {
+  if (!expression) {
+    return;
+  }
+
+  if (expression.type === "StringLiteral") {
+    pushJsxExpressionString(nodes, expression, expression.value);
+    return;
+  }
+
+  if (expression.type === "TemplateLiteral") {
+    const quasis = expression.quasis ?? [];
+    const expressions = expression.expressions ?? [];
+
+    if (expressions.length === 0 && quasis.length === 1) {
+      const value = quasis[0]?.value?.cooked ?? quasis[0]?.value?.raw;
+
+      if (typeof value === "string") {
+        pushJsxExpressionString(nodes, expression, value);
+      }
+    }
+
+    return;
+  }
+
+  if (expression.type === "ConditionalExpression") {
+    collectExpressionStrings(expression.consequent, nodes);
+    collectExpressionStrings(expression.alternate, nodes);
+    return;
+  }
+
+  if (expression.type === "LogicalExpression") {
+    collectExpressionStrings(expression.left, nodes);
+    collectExpressionStrings(expression.right, nodes);
+    return;
+  }
+
+  if (
+    expression.type === "ParenthesizedExpression" ||
+    expression.type === "TSAsExpression" ||
+    expression.type === "TSTypeAssertion" ||
+    expression.type === "TypeCastExpression"
+  ) {
+    collectExpressionStrings(expression.expression, nodes);
+  }
+}
+
 export function collectJsxExpressionStringValues(source: string): JsxExpressionStringNode[] {
   const ast = parseSource(source);
   const nodes: JsxExpressionStringNode[] = [];
 
   traverse(ast, {
-    JSXExpressionContainer(path: NodePath<JSXExpressionContainer>) {
-      const expression = path.node.expression;
-
-      if (expression.type !== "StringLiteral") {
+    JSXExpressionContainer(path: any) {
+      if (path.parent?.type === "JSXAttribute") {
         return;
       }
 
-      const value = expression.value.trim();
-
-      if (!value || !expression.loc) {
-        return;
-      }
-
-      nodes.push({
-        value,
-        startLine: expression.loc.start.line,
-        startColumn: expression.loc.start.column,
-        endLine: expression.loc.end.line,
-        endColumn: expression.loc.end.column
-      });
+      collectExpressionStrings(path.node.expression, nodes);
     }
   });
 
