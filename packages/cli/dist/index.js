@@ -47,20 +47,31 @@ function runRulesList() {
   }
   return lines.join("\n");
 }
+function createScanOutput(targetPath, cwd = process.cwd()) {
+  const files = collectFiles(targetPath);
+  const findings = files.flatMap((filePath) => {
+    const sourceText = readFileSync(filePath, "utf8");
+    return detect({
+      filePath: relative(cwd, filePath),
+      sourceText
+    }).findings;
+  });
+  return {
+    scannedFiles: files.length,
+    findings,
+    summary: createReportSummary({ findings })
+  };
+}
 function runScan(targetPath, cwd = process.cwd()) {
   const ruleMetadata = new Map(
     getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
   );
-  const files = collectFiles(targetPath);
-  const findings = files.flatMap((filePath) => {
-    const sourceText = readFileSync(filePath, "utf8");
-    return detect({ filePath: relative(cwd, filePath), sourceText }).findings;
-  });
-  const summary = createReportSummary({ findings });
+  const output = createScanOutput(targetPath, cwd);
+  const summary = output.summary;
   const lines = [
     getCliBanner(),
     "",
-    `Scanned files: ${files.length}`,
+    `Scanned files: ${output.scannedFiles}`,
     `Findings: ${summary.totalFindings}`,
     `Can I ship? ${summary.shipDecision === "yes" ? "Yes" : summary.shipDecision === "warning" ? "With warnings" : "No"}`,
     `Reason: ${summary.shipReason}`,
@@ -68,7 +79,7 @@ function runScan(targetPath, cwd = process.cwd()) {
     `Localization score: ${summary.healthScore.score} / 100`,
     ""
   ];
-  for (const finding of findings) {
+  for (const finding of output.findings) {
     const metadata = ruleMetadata.get(finding.ruleId);
     lines.push("----------------------------");
     lines.push(`${finding.ruleId}${metadata ? ` - ${metadata.name}` : ""}`);
@@ -81,11 +92,17 @@ function runScan(targetPath, cwd = process.cwd()) {
   }
   return lines.join("\n");
 }
+function runScanJson(targetPath, cwd = process.cwd()) {
+  return JSON.stringify(createScanOutput(targetPath, cwd), null, 2);
+}
 async function runCli(args = process.argv.slice(2)) {
-  const [command, target = "."] = args;
+  const json = args.includes("--json");
+  const normalizedArgs = args.filter((arg) => arg !== "--json");
+  const [command, target = "."] = normalizedArgs;
   if (!command || command === "--help" || command === "-h") {
     console.log("Usage:");
     console.log("  nohardtext scan <path>");
+    console.log("  nohardtext scan <path> --json");
     console.log("  nohardtext rules");
     return;
   }
@@ -94,7 +111,7 @@ async function runCli(args = process.argv.slice(2)) {
     return;
   }
   if (command === "scan") {
-    console.log(runScan(target));
+    console.log(json ? runScanJson(target) : runScan(target));
     return;
   }
   throw new Error(`Unknown command: ${command}`);
@@ -106,8 +123,10 @@ if (process.argv[1]?.endsWith("index.js")) {
   });
 }
 export {
+  createScanOutput,
   getCliBanner,
   runCli,
   runRulesList,
-  runScan
+  runScan,
+  runScanJson
 };

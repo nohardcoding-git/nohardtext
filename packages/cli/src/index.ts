@@ -2,10 +2,17 @@
 
 import { existsSync, readFileSync, statSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
+import type { Finding } from "@nohardtext/domain";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
-import { createReportSummary } from "@nohardtext/report-engine";
+import { createReportSummary, type ReportSummary } from "@nohardtext/report-engine";
 
 const SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
+
+export interface ScanOutput {
+  scannedFiles: number;
+  findings: Finding[];
+  summary: ReportSummary;
+}
 
 export function getCliBanner(): string {
   return "NoHardText CLI";
@@ -60,23 +67,37 @@ export function runRulesList(): string {
   return lines.join("\n");
 }
 
+export function createScanOutput(targetPath: string, cwd = process.cwd()): ScanOutput {
+  const files = collectFiles(targetPath);
+
+  const findings = files.flatMap((filePath) => {
+    const sourceText = readFileSync(filePath, "utf8");
+
+    return detect({
+      filePath: relative(cwd, filePath),
+      sourceText
+    }).findings;
+  });
+
+  return {
+    scannedFiles: files.length,
+    findings,
+    summary: createReportSummary({ findings })
+  };
+}
+
 export function runScan(targetPath: string, cwd = process.cwd()): string {
   const ruleMetadata = new Map(
     getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
   );
 
-  const files = collectFiles(targetPath);
-  const findings = files.flatMap((filePath) => {
-    const sourceText = readFileSync(filePath, "utf8");
-    return detect({ filePath: relative(cwd, filePath), sourceText }).findings;
-  });
-
-  const summary = createReportSummary({ findings });
+  const output = createScanOutput(targetPath, cwd);
+  const summary = output.summary;
 
   const lines = [
     getCliBanner(),
     "",
-    `Scanned files: ${files.length}`,
+    `Scanned files: ${output.scannedFiles}`,
     `Findings: ${summary.totalFindings}`,
     `Can I ship? ${summary.shipDecision === "yes" ? "Yes" : summary.shipDecision === "warning" ? "With warnings" : "No"}`,
     `Reason: ${summary.shipReason}`,
@@ -85,7 +106,7 @@ export function runScan(targetPath: string, cwd = process.cwd()): string {
     ""
   ];
 
-  for (const finding of findings) {
+  for (const finding of output.findings) {
     const metadata = ruleMetadata.get(finding.ruleId);
 
     lines.push("----------------------------");
@@ -101,12 +122,20 @@ export function runScan(targetPath: string, cwd = process.cwd()): string {
   return lines.join("\n");
 }
 
+export function runScanJson(targetPath: string, cwd = process.cwd()): string {
+  return JSON.stringify(createScanOutput(targetPath, cwd), null, 2);
+}
+
 export async function runCli(args = process.argv.slice(2)): Promise<void> {
-  const [command, target = "."] = args;
+  const json = args.includes("--json");
+  const normalizedArgs = args.filter((arg) => arg !== "--json");
+
+  const [command, target = "."] = normalizedArgs;
 
   if (!command || command === "--help" || command === "-h") {
     console.log("Usage:");
     console.log("  nohardtext scan <path>");
+    console.log("  nohardtext scan <path> --json");
     console.log("  nohardtext rules");
     return;
   }
@@ -117,7 +146,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
   }
 
   if (command === "scan") {
-    console.log(runScan(target));
+    console.log(json ? runScanJson(target) : runScan(target));
     return;
   }
 

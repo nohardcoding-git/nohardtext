@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@nohardtext/detect-engine": "workspace:*",
+    "@nohardtext/domain": "workspace:*",
     "@nohardtext/report-engine": "workspace:*"
   },
   "devDependencies": {
