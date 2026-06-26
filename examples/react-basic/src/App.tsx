@@ -3,7 +3,9 @@ export default function App() {
     <>
       <h1>Welcome</h1>
 
-      <button title="Start the game">Start Game</button>
+      <button title="Start the game" aria-label="Start button">
+        Start Game
+      </button>
 
       <input placeholder="Search..." />
 

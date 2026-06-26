@@ -16,6 +16,14 @@ export interface DetectResult {
   findings: Finding[];
 }
 
+interface AttributeRuleConfig {
+  attributeName: string;
+  ruleId: string;
+  messagePrefix: string;
+  explanation: string;
+  suggestion: string;
+}
+
 export function detect(input: DetectInput): DetectResult {
   const ruleFindings = input.rules
     ? runRules(input.rules, {
@@ -30,7 +38,8 @@ export function detect(input: DetectInput): DetectResult {
       ...ruleFindings,
       ...detectJsxText(input.filePath, input.sourceText),
       ...detectPlaceholderText(input.filePath, input.sourceText),
-      ...detectTitleAttributeText(input.filePath, input.sourceText)
+      ...detectTitleAttributeText(input.filePath, input.sourceText),
+      ...detectAriaLabelText(input.filePath, input.sourceText)
     ]
   };
 }
@@ -55,14 +64,18 @@ export function detectJsxText(filePath: string, sourceText: string): Finding[] {
   }));
 }
 
-export function detectPlaceholderText(filePath: string, sourceText: string): Finding[] {
-  return collectJsxAttributeStringValues(sourceText, ["placeholder"]).map((node, index) => ({
-    id: `${filePath}:NHT1002:${node.startLine}:${node.startColumn}:${index}`,
-    ruleId: "NHT1002",
+function detectStringAttribute(
+  filePath: string,
+  sourceText: string,
+  config: AttributeRuleConfig
+): Finding[] {
+  return collectJsxAttributeStringValues(sourceText, [config.attributeName]).map((node, index) => ({
+    id: `${filePath}:${config.ruleId}:${node.startLine}:${node.startColumn}:${index}`,
+    ruleId: config.ruleId,
     severity: "high",
     category: "localization",
-    message: `Hardcoded placeholder found: "${node.value}"`,
-    explanation: "User-facing placeholder text should be moved to localization files.",
+    message: `${config.messagePrefix}: "${node.value}"`,
+    explanation: config.explanation,
     location: {
       filePath,
       startLine: node.startLine,
@@ -71,26 +84,36 @@ export function detectPlaceholderText(filePath: string, sourceText: string): Fin
       endColumn: node.endColumn
     },
     fixable: true,
-    suggestions: [{ message: "Extract this placeholder to a localization key." }]
+    suggestions: [{ message: config.suggestion }]
   }));
 }
 
+export function detectPlaceholderText(filePath: string, sourceText: string): Finding[] {
+  return detectStringAttribute(filePath, sourceText, {
+    attributeName: "placeholder",
+    ruleId: "NHT1002",
+    messagePrefix: "Hardcoded placeholder found",
+    explanation: "User-facing placeholder text should be moved to localization files.",
+    suggestion: "Extract this placeholder to a localization key."
+  });
+}
+
 export function detectTitleAttributeText(filePath: string, sourceText: string): Finding[] {
-  return collectJsxAttributeStringValues(sourceText, ["title"]).map((node, index) => ({
-    id: `${filePath}:NHT1003:${node.startLine}:${node.startColumn}:${index}`,
+  return detectStringAttribute(filePath, sourceText, {
+    attributeName: "title",
     ruleId: "NHT1003",
-    severity: "high",
-    category: "localization",
-    message: `Hardcoded title attribute found: "${node.value}"`,
+    messagePrefix: "Hardcoded title attribute found",
     explanation: "User-facing title attributes should be moved to localization files.",
-    location: {
-      filePath,
-      startLine: node.startLine,
-      startColumn: node.startColumn,
-      endLine: node.endLine,
-      endColumn: node.endColumn
-    },
-    fixable: true,
-    suggestions: [{ message: "Extract this title attribute to a localization key." }]
-  }));
+    suggestion: "Extract this title attribute to a localization key."
+  });
+}
+
+export function detectAriaLabelText(filePath: string, sourceText: string): Finding[] {
+  return detectStringAttribute(filePath, sourceText, {
+    attributeName: "aria-label",
+    ruleId: "NHT1004",
+    messagePrefix: "Hardcoded aria-label found",
+    explanation: "User-facing accessibility labels should be moved to localization files.",
+    suggestion: "Extract this aria-label to a localization key."
+  });
 }
