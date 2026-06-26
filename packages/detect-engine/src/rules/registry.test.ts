@@ -10,7 +10,8 @@ describe("built-in rule registry", () => {
       "NHT1002",
       "NHT1003",
       "NHT1004",
-      "NHT1005"
+      "NHT1005",
+      "NHT1006"
     ]);
 
     expect(rules.every((rule) => rule.fixable)).toBe(true);

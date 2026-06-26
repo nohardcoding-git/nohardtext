@@ -5,7 +5,8 @@ import {
   detectAriaLabelText,
   detectJsxText,
   detectPlaceholderText,
-  detectTitleAttributeText
+  detectTitleAttributeText,
+  detectCustomComponentPropText
 } from "./index";
 import type { Rule } from "@nohardtext/rule-engine";
 
@@ -72,6 +73,37 @@ describe("@nohardtext/detect-engine", () => {
     expect(findings[0]?.message).toContain("Game logo");
   });
 
+    it("detects hardcoded component prop text", () => {
+    const findings = detectCustomComponentPropText(
+      "src/App.tsx",
+      `
+        export default function App() {
+          return (
+            <>
+              <Button label="Save" />
+              <EmptyState description="Try another search" />
+              <Modal confirmText="Delete" cancelText="Cancel" />
+            </>
+          );
+        }
+      `
+    );
+
+    expect(findings.map((finding) => finding.ruleId)).toEqual([
+      "NHT1006",
+      "NHT1006",
+      "NHT1006",
+      "NHT1006"
+    ]);
+
+    expect(findings.map((finding) => finding.message)).toEqual([
+      'Hardcoded component prop "label" found: "Save"',
+      'Hardcoded component prop "description" found: "Try another search"',
+      'Hardcoded component prop "confirmText" found: "Delete"',
+      'Hardcoded component prop "cancelText" found: "Cancel"'
+    ]);
+  });
+
   it("detects all supported rules together", () => {
     const result = detect({
       filePath: "src/App.tsx",
@@ -85,6 +117,7 @@ describe("@nohardtext/detect-engine", () => {
               </button>
               <input placeholder="Search..." />
               <img src="/logo.png" alt="Game logo" />
+              <Button label="Continue" />
             </>
           );
         }
@@ -97,7 +130,8 @@ describe("@nohardtext/detect-engine", () => {
       "NHT1002",
       "NHT1003",
       "NHT1004",
-      "NHT1005"
+      "NHT1005",
+      "NHT1006"
     ]);
   });
 

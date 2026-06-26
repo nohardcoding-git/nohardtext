@@ -14,6 +14,8 @@ declare function detectTitleAttributeText(filePath: string, sourceText: string):
 
 declare function getBuiltInRuleMetadata(): RuleMetadata[];
 
+declare function detectCustomComponentPropText(filePath: string, sourceText: string): Finding[];
+
 interface DetectInput {
     filePath: string;
     sourceText: string;
@@ -25,4 +27,4 @@ interface DetectResult {
 }
 declare function detect(input: DetectInput): DetectResult;
 
-export { type DetectInput, type DetectResult, detect, detectAltAttributeText, detectAriaLabelText, detectJsxText, detectPlaceholderText, detectTitleAttributeText, getBuiltInRuleMetadata };
+export { type DetectInput, type DetectResult, detect, detectAltAttributeText, detectAriaLabelText, detectCustomComponentPropText, detectJsxText, detectPlaceholderText, detectTitleAttributeText, getBuiltInRuleMetadata };

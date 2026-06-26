@@ -149,6 +149,33 @@ function detectTitleAttributeText(filePath, sourceText) {
   });
 }
 
+// src/rules/custom-component-prop.ts
+var COMPONENT_TEXT_PROPS = [
+  "label",
+  "description",
+  "helperText",
+  "emptyText",
+  "confirmText",
+  "cancelText",
+  "submitText",
+  "closeText",
+  "primaryText",
+  "secondaryText"
+];
+function detectCustomComponentPropText(filePath, sourceText) {
+  return COMPONENT_TEXT_PROPS.flatMap(
+    (attributeName) => detectStringAttribute(filePath, sourceText, {
+      attributeName,
+      ruleId: "NHT1006",
+      messagePrefix: `Hardcoded component prop "${attributeName}" found`,
+      explanation: "User-facing component prop text should be moved to localization files.",
+      suggestion: "Move this component prop text to a localization key.",
+      category: "localization",
+      severity: "high"
+    })
+  );
+}
+
 // src/rules/registry.ts
 var builtInRules = [
   {
@@ -205,6 +232,17 @@ var builtInRules = [
       fixable: true
     },
     detect: detectAltAttributeText
+  },
+  {
+    metadata: {
+      id: "NHT1006",
+      name: "Component Text Prop",
+      category: "localization",
+      severity: "high",
+      description: "Detects hardcoded user-facing text passed through common component props.",
+      fixable: true
+    },
+    detect: detectCustomComponentPropText
   }
 ];
 var builtInRuleDetectors = builtInRules.map((rule) => rule.detect);
@@ -230,6 +268,7 @@ export {
   detect,
   detectAltAttributeText,
   detectAriaLabelText,
+  detectCustomComponentPropText,
   detectJsxText,
   detectPlaceholderText,
   detectTitleAttributeText,

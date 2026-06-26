@@ -4,6 +4,7 @@ import { detectAriaLabelText } from "./aria-label";
 import { detectJsxText } from "./jsx-text";
 import { detectPlaceholderText } from "./placeholder";
 import { detectTitleAttributeText } from "./title";
+import { detectCustomComponentPropText } from "./custom-component-prop";
 
 export type BuiltInRuleDetector = (
   filePath: string,
@@ -69,8 +70,20 @@ export const builtInRules: BuiltInRuleDefinition[] = [
       description: "Detects hardcoded image alt attribute values.",
       fixable: true
     },
+    
     detect: detectAltAttributeText
-  }
+  },
+  {
+  metadata: {
+    id: "NHT1006",
+    name: "Component Text Prop",
+    category: "localization",
+    severity: "high",
+    description: "Detects hardcoded user-facing text passed through common component props.",
+    fixable: true
+  },
+  detect: detectCustomComponentPropText
+}
 ];
 
 export const builtInRuleDetectors = builtInRules.map((rule) => rule.detect);

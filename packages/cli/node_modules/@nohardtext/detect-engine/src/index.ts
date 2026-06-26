@@ -8,7 +8,7 @@ export { detectJsxText } from "./rules/jsx-text";
 export { detectPlaceholderText } from "./rules/placeholder";
 export { detectTitleAttributeText } from "./rules/title";
 export { getBuiltInRuleMetadata } from "./rules/registry";
-
+export { detectCustomComponentPropText } from "./rules/custom-component-prop";
 export interface DetectInput {
   filePath: string;
   sourceText: string;
