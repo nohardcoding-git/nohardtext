@@ -1,6 +1,11 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   getCliBanner,
+  getIgnoredDirectories,
+  loadConfig,
   runRulesList,
   runScan,
   runScanJson,
@@ -14,11 +19,41 @@ describe("@nohardtext/cli", () => {
     expect(getCliBanner()).toBe("NoHardText CLI");
   });
 
+  it("loads nohardtext config", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      writeFileSync(
+        join(dir, "nohardtext.config.json"),
+        JSON.stringify({
+          ignore: ["storybook-static"],
+          failOn: "high"
+        })
+      );
+
+      const config = loadConfig(dir);
+
+      expect(config.ignore).toEqual(["storybook-static"]);
+      expect(config.failOn).toBe("high");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("skips generated and dependency directories", () => {
     expect(shouldSkipDirectory("node_modules")).toBe(true);
     expect(shouldSkipDirectory("dist")).toBe(true);
     expect(shouldSkipDirectory(".git")).toBe(true);
     expect(shouldSkipDirectory("src")).toBe(false);
+  });
+
+  it("supports custom ignored directories from config", () => {
+    const ignoredDirectories = getIgnoredDirectories({
+      ignore: ["storybook-static"]
+    });
+
+    expect(shouldSkipDirectory("storybook-static", ignoredDirectories)).toBe(true);
+    expect(shouldSkipDirectory("src", ignoredDirectories)).toBe(false);
   });
 
   it("lists supported rules", () => {

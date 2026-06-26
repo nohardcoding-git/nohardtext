@@ -8,7 +8,7 @@ import { createReportSummary, type ReportSummary } from "@nohardtext/report-engi
 
 const SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
-const IGNORED_DIRECTORIES = new Set([
+const DEFAULT_IGNORED_DIRECTORIES = [
   "node_modules",
   "dist",
   "coverage",
@@ -16,9 +16,14 @@ const IGNORED_DIRECTORIES = new Set([
   ".next",
   "build",
   "out"
-]);
+];
 
 const SEVERITY_ORDER: Severity[] = ["info", "low", "medium", "high", "critical"];
+
+export interface NoHardTextConfig {
+  ignore?: string[];
+  failOn?: Severity;
+}
 
 export interface ScanOutput {
   scannedFiles: number;
@@ -35,15 +40,57 @@ export function getCliBanner(): string {
   return "NoHardText CLI";
 }
 
-export function shouldSkipDirectory(directoryName: string): boolean {
-  return IGNORED_DIRECTORIES.has(directoryName);
+function normalizeFailOn(value: unknown): Severity | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string" || !SEVERITY_ORDER.includes(value as Severity)) {
+    throw new Error(`Invalid failOn severity in config: ${String(value)}`);
+  }
+
+  return value as Severity;
+}
+
+export function loadConfig(cwd = process.cwd()): NoHardTextConfig {
+  const configPath = join(cwd, "nohardtext.config.json");
+
+  if (!existsSync(configPath)) {
+    return {};
+  }
+
+  const parsed = JSON.parse(readFileSync(configPath, "utf8")) as {
+    ignore?: unknown;
+    failOn?: unknown;
+  };
+
+  return {
+    ignore: Array.isArray(parsed.ignore)
+      ? parsed.ignore.filter((item): item is string => typeof item === "string")
+      : undefined,
+    failOn: normalizeFailOn(parsed.failOn)
+  };
+}
+
+export function getIgnoredDirectories(config: NoHardTextConfig = {}): Set<string> {
+  return new Set([
+    ...DEFAULT_IGNORED_DIRECTORIES,
+    ...(config.ignore ?? [])
+  ]);
+}
+
+export function shouldSkipDirectory(
+  directoryName: string,
+  ignoredDirectories = getIgnoredDirectories()
+): boolean {
+  return ignoredDirectories.has(directoryName);
 }
 
 function isSupportedFile(filePath: string): boolean {
   return SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension));
 }
 
-function collectFiles(targetPath: string): string[] {
+function collectFiles(targetPath: string, ignoredDirectories: Set<string>): string[] {
   if (!existsSync(targetPath)) {
     throw new Error(`Path does not exist: ${targetPath}`);
   }
@@ -55,7 +102,7 @@ function collectFiles(targetPath: string): string[] {
   }
 
   return readdirSync(targetPath).flatMap((entry) => {
-    if (shouldSkipDirectory(entry)) {
+    if (shouldSkipDirectory(entry, ignoredDirectories)) {
       return [];
     }
 
@@ -63,7 +110,7 @@ function collectFiles(targetPath: string): string[] {
     const entryStat = statSync(fullPath);
 
     if (entryStat.isDirectory()) {
-      return collectFiles(fullPath);
+      return collectFiles(fullPath, ignoredDirectories);
     }
 
     return isSupportedFile(fullPath) ? [fullPath] : [];
@@ -73,6 +120,10 @@ function collectFiles(targetPath: string): string[] {
 function parseOptions(args: string[]): CliOptions {
   const failOnIndex = args.indexOf("--fail-on");
   const failOnValue = failOnIndex >= 0 ? args[failOnIndex + 1] : undefined;
+
+  if (failOnIndex >= 0 && (!failOnValue || failOnValue.startsWith("--"))) {
+    throw new Error("Missing value for --fail-on");
+  }
 
   if (failOnValue && !SEVERITY_ORDER.includes(failOnValue as Severity)) {
     throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
@@ -137,8 +188,13 @@ export function runRulesList(): string {
   return lines.join("\n");
 }
 
-export function createScanOutput(targetPath: string, cwd = process.cwd()): ScanOutput {
-  const files = collectFiles(targetPath);
+export function createScanOutput(
+  targetPath: string,
+  cwd = process.cwd(),
+  config: NoHardTextConfig = {}
+): ScanOutput {
+  const ignoredDirectories = getIgnoredDirectories(config);
+  const files = collectFiles(targetPath, ignoredDirectories);
 
   const findings = files.flatMap((filePath) => {
     const sourceText = readFileSync(filePath, "utf8");
@@ -156,12 +212,11 @@ export function createScanOutput(targetPath: string, cwd = process.cwd()): ScanO
   };
 }
 
-export function runScan(targetPath: string, cwd = process.cwd(), options: CliOptions = { json: false }): string {
+export function formatScanOutput(output: ScanOutput, options: CliOptions = { json: false }): string {
   const ruleMetadata = new Map(
     getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
   );
 
-  const output = createScanOutput(targetPath, cwd);
   const summary = output.summary;
 
   const lines = [
@@ -198,12 +253,25 @@ export function runScan(targetPath: string, cwd = process.cwd(), options: CliOpt
   return lines.join("\n");
 }
 
-export function runScanJson(targetPath: string, cwd = process.cwd()): string {
-  return JSON.stringify(createScanOutput(targetPath, cwd), null, 2);
+export function runScan(
+  targetPath: string,
+  cwd = process.cwd(),
+  options: CliOptions = { json: false },
+  config: NoHardTextConfig = {}
+): string {
+  return formatScanOutput(createScanOutput(targetPath, cwd, config), options);
+}
+
+export function runScanJson(
+  targetPath: string,
+  cwd = process.cwd(),
+  config: NoHardTextConfig = {}
+): string {
+  return JSON.stringify(createScanOutput(targetPath, cwd, config), null, 2);
 }
 
 export async function runCli(args = process.argv.slice(2)): Promise<void> {
-  const options = parseOptions(args);
+  const parsedOptions = parseOptions(args);
   const normalizedArgs = stripOptions(args);
 
   const [command, target = "."] = normalizedArgs;
@@ -223,9 +291,15 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
   }
 
   if (command === "scan") {
-    const output = createScanOutput(target);
+    const config = loadConfig(process.cwd());
+    const options: CliOptions = {
+      ...parsedOptions,
+      failOn: parsedOptions.failOn ?? config.failOn
+    };
 
-    console.log(options.json ? JSON.stringify(output, null, 2) : runScan(target, process.cwd(), options));
+    const output = createScanOutput(target, process.cwd(), config);
+
+    console.log(options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options));
 
     if (shouldFail(output.findings, options.failOn)) {
       process.exitCode = 1;

@@ -6,7 +6,7 @@ import { join, relative } from "path";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import { createReportSummary } from "@nohardtext/report-engine";
 var SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
-var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set([
+var DEFAULT_IGNORED_DIRECTORIES = [
   "node_modules",
   "dist",
   "coverage",
@@ -14,18 +14,44 @@ var IGNORED_DIRECTORIES = /* @__PURE__ */ new Set([
   ".next",
   "build",
   "out"
-]);
+];
 var SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"];
 function getCliBanner() {
   return "NoHardText CLI";
 }
-function shouldSkipDirectory(directoryName) {
-  return IGNORED_DIRECTORIES.has(directoryName);
+function normalizeFailOn(value) {
+  if (value === void 0) {
+    return void 0;
+  }
+  if (typeof value !== "string" || !SEVERITY_ORDER.includes(value)) {
+    throw new Error(`Invalid failOn severity in config: ${String(value)}`);
+  }
+  return value;
+}
+function loadConfig(cwd = process.cwd()) {
+  const configPath = join(cwd, "nohardtext.config.json");
+  if (!existsSync(configPath)) {
+    return {};
+  }
+  const parsed = JSON.parse(readFileSync(configPath, "utf8"));
+  return {
+    ignore: Array.isArray(parsed.ignore) ? parsed.ignore.filter((item) => typeof item === "string") : void 0,
+    failOn: normalizeFailOn(parsed.failOn)
+  };
+}
+function getIgnoredDirectories(config = {}) {
+  return /* @__PURE__ */ new Set([
+    ...DEFAULT_IGNORED_DIRECTORIES,
+    ...config.ignore ?? []
+  ]);
+}
+function shouldSkipDirectory(directoryName, ignoredDirectories = getIgnoredDirectories()) {
+  return ignoredDirectories.has(directoryName);
 }
 function isSupportedFile(filePath) {
   return SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension));
 }
-function collectFiles(targetPath) {
+function collectFiles(targetPath, ignoredDirectories) {
   if (!existsSync(targetPath)) {
     throw new Error(`Path does not exist: ${targetPath}`);
   }
@@ -34,13 +60,13 @@ function collectFiles(targetPath) {
     return isSupportedFile(targetPath) ? [targetPath] : [];
   }
   return readdirSync(targetPath).flatMap((entry) => {
-    if (shouldSkipDirectory(entry)) {
+    if (shouldSkipDirectory(entry, ignoredDirectories)) {
       return [];
     }
     const fullPath = join(targetPath, entry);
     const entryStat = statSync(fullPath);
     if (entryStat.isDirectory()) {
-      return collectFiles(fullPath);
+      return collectFiles(fullPath, ignoredDirectories);
     }
     return isSupportedFile(fullPath) ? [fullPath] : [];
   });
@@ -48,6 +74,9 @@ function collectFiles(targetPath) {
 function parseOptions(args) {
   const failOnIndex = args.indexOf("--fail-on");
   const failOnValue = failOnIndex >= 0 ? args[failOnIndex + 1] : void 0;
+  if (failOnIndex >= 0 && (!failOnValue || failOnValue.startsWith("--"))) {
+    throw new Error("Missing value for --fail-on");
+  }
   if (failOnValue && !SEVERITY_ORDER.includes(failOnValue)) {
     throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
   }
@@ -96,8 +125,9 @@ function runRulesList() {
   }
   return lines.join("\n");
 }
-function createScanOutput(targetPath, cwd = process.cwd()) {
-  const files = collectFiles(targetPath);
+function createScanOutput(targetPath, cwd = process.cwd(), config = {}) {
+  const ignoredDirectories = getIgnoredDirectories(config);
+  const files = collectFiles(targetPath, ignoredDirectories);
   const findings = files.flatMap((filePath) => {
     const sourceText = readFileSync(filePath, "utf8");
     return detect({
@@ -111,11 +141,10 @@ function createScanOutput(targetPath, cwd = process.cwd()) {
     summary: createReportSummary({ findings })
   };
 }
-function runScan(targetPath, cwd = process.cwd(), options = { json: false }) {
+function formatScanOutput(output, options = { json: false }) {
   const ruleMetadata = new Map(
     getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
   );
-  const output = createScanOutput(targetPath, cwd);
   const summary = output.summary;
   const lines = [
     getCliBanner(),
@@ -146,11 +175,14 @@ function runScan(targetPath, cwd = process.cwd(), options = { json: false }) {
   }
   return lines.join("\n");
 }
-function runScanJson(targetPath, cwd = process.cwd()) {
-  return JSON.stringify(createScanOutput(targetPath, cwd), null, 2);
+function runScan(targetPath, cwd = process.cwd(), options = { json: false }, config = {}) {
+  return formatScanOutput(createScanOutput(targetPath, cwd, config), options);
+}
+function runScanJson(targetPath, cwd = process.cwd(), config = {}) {
+  return JSON.stringify(createScanOutput(targetPath, cwd, config), null, 2);
 }
 async function runCli(args = process.argv.slice(2)) {
-  const options = parseOptions(args);
+  const parsedOptions = parseOptions(args);
   const normalizedArgs = stripOptions(args);
   const [command, target = "."] = normalizedArgs;
   if (!command || command === "--help" || command === "-h") {
@@ -166,8 +198,13 @@ async function runCli(args = process.argv.slice(2)) {
     return;
   }
   if (command === "scan") {
-    const output = createScanOutput(target);
-    console.log(options.json ? JSON.stringify(output, null, 2) : runScan(target, process.cwd(), options));
+    const config = loadConfig(process.cwd());
+    const options = {
+      ...parsedOptions,
+      failOn: parsedOptions.failOn ?? config.failOn
+    };
+    const output = createScanOutput(target, process.cwd(), config);
+    console.log(options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options));
     if (shouldFail(output.findings, options.failOn)) {
       process.exitCode = 1;
     }
@@ -183,7 +220,10 @@ if (process.argv[1]?.endsWith("index.js")) {
 }
 export {
   createScanOutput,
+  formatScanOutput,
   getCliBanner,
+  getIgnoredDirectories,
+  loadConfig,
   runCli,
   runRulesList,
   runScan,
