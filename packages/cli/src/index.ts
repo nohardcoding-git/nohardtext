@@ -61,6 +61,7 @@ export interface CliOptions {
   json: boolean;
   failOn?: Severity;
   outputPath?: string;
+  githubAnnotations?: boolean;
 }
 
 export interface ScanOutputOptions {
@@ -212,6 +213,11 @@ function getRequiredOptionValue(args: string[], optionName: string): string | un
 function parseOptions(args: string[]): CliOptions {
   const failOnValue = getRequiredOptionValue(args, "--fail-on");
   const outputPath = getRequiredOptionValue(args, "--output");
+  const githubAnnotations = args.includes("--github-annotations");
+
+  if (args.includes("--json") && githubAnnotations) {
+    throw new Error("Use either --json or --github-annotations, not both.");
+  }
 
   if (failOnValue && !SEVERITY_ORDER.includes(failOnValue as Severity)) {
     throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
@@ -221,6 +227,7 @@ function parseOptions(args: string[]): CliOptions {
     json: args.includes("--json"),
     failOn: failOnValue as Severity | undefined,
     outputPath,
+    githubAnnotations,
   };
 }
 
@@ -231,7 +238,7 @@ function stripOptions(args: string[]): string[] {
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
 
-    if (arg === "--json") {
+    if (arg === "--json" || arg === "--github-annotations") {
       continue;
     }
 
@@ -362,6 +369,61 @@ export function formatScanOutput(
   return lines.join("\n");
 }
 
+function escapeGithubAnnotationValue(value: string): string {
+  return value
+    .replace(/%/g, "%25")
+    .replace(/\r/g, "%0D")
+    .replace(/\n/g, "%0A");
+}
+
+function escapeGithubAnnotationProperty(value: string): string {
+  return escapeGithubAnnotationValue(value)
+    .replace(/,/g, "%2C")
+    .replace(/:/g, "%3A");
+}
+
+function getGithubAnnotationLevel(severity: Severity): "notice" | "warning" | "error" {
+  if (severity === "critical" || severity === "high") {
+    return "error";
+  }
+
+  if (severity === "medium" || severity === "low") {
+    return "warning";
+  }
+
+  return "notice";
+}
+
+export function formatGithubAnnotationOutput(output: ScanOutput): string {
+  const ruleMetadata = new Map(
+    getBuiltInRuleMetadata().map((rule) => [rule.id, rule]),
+  );
+
+  const lines = output.findings.map((finding) => {
+    const metadata = ruleMetadata.get(finding.ruleId);
+    const level = getGithubAnnotationLevel(finding.severity);
+    const file = escapeGithubAnnotationProperty(finding.location.filePath);
+    const title = escapeGithubAnnotationProperty(
+      `${finding.ruleId}${metadata ? ` - ${metadata.name}` : ""}`,
+    );
+    const message = escapeGithubAnnotationValue(
+      `[${finding.severity}][${finding.category}] ${finding.message} ${finding.explanation}`,
+    );
+
+    return `::${level} file=${file},line=${finding.location.startLine},col=${finding.location.startColumn},title=${title}::${message}`;
+  });
+
+  if (lines.length === 0) {
+    lines.push("NoHardText: no findings.");
+  } else {
+    lines.push(
+      `NoHardText: ${output.summary.totalFindings} finding(s). ${output.summary.shipReason} Score: ${output.summary.healthScore.score}/100.`,
+    );
+  }
+
+  return lines.join("\n");
+}
+
 export function runScan(
   targetPath: string,
   cwd = process.cwd(),
@@ -394,6 +456,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
     console.log("  nohardtext scan <path>");
     console.log("  nohardtext scan <path> --json");
     console.log("  nohardtext scan <path> --json --output nohardtext-report.json");
+    console.log("  nohardtext scan <path> --github-annotations --fail-on high");
     console.log("  nohardtext scan <path> --fail-on high");
     console.log("  nohardtext rules");
     return;
@@ -415,9 +478,11 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
       failOn: options.failOn,
     });
 
-    const renderedOutput = options.json
-      ? JSON.stringify(output, null, 2)
-      : formatScanOutput(output, options);
+    const renderedOutput = options.githubAnnotations
+      ? formatGithubAnnotationOutput(output)
+      : options.json
+        ? JSON.stringify(output, null, 2)
+        : formatScanOutput(output, options);
 
     if (options.outputPath) {
       writeFileSync(options.outputPath, renderedOutput);

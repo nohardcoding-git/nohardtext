@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  formatGithubAnnotationOutput,
   getCliBanner,
   getIgnoredDirectories,
   loadConfig,
@@ -214,6 +215,66 @@ describe("@nohardtext/cli", () => {
       expect(parsed.tool.name).toBe("NoHardText");
       expect(parsed.scannedFiles).toBe(1);
       expect(parsed.findings.length).toBeGreaterThan(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("formats GitHub annotation output", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      const sourcePath = join(dir, "App.tsx");
+
+      writeFileSync(
+        sourcePath,
+        `
+          export default function App() {
+            return <button>Save</button>;
+          }
+        `,
+      );
+
+      const output = JSON.parse(runScanJson(sourcePath, dir));
+      const annotations = formatGithubAnnotationOutput(output);
+
+      expect(annotations).toContain("::error file=App.tsx");
+      expect(annotations).toContain("title=NHT1001 - JSX Text");
+      expect(annotations).toContain("NoHardText:");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes GitHub annotation output to a file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      const sourcePath = join(dir, "App.tsx");
+      const outputPath = join(dir, "github-annotations.txt");
+
+      writeFileSync(
+        sourcePath,
+        `
+          export default function App() {
+            return <button>Save</button>;
+          }
+        `,
+      );
+
+      await runCli([
+        "scan",
+        sourcePath,
+        "--github-annotations",
+        "--output",
+        outputPath,
+      ]);
+
+      const content = readFileSync(outputPath, "utf8");
+
+      expect(content).toContain("App.tsx");
+      expect(content).toContain("title=NHT1001 - JSX Text");
+      expect(content).toContain("NoHardText:");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

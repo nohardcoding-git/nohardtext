@@ -129,13 +129,18 @@ function getRequiredOptionValue(args, optionName) {
 function parseOptions(args) {
   const failOnValue = getRequiredOptionValue(args, "--fail-on");
   const outputPath = getRequiredOptionValue(args, "--output");
+  const githubAnnotations = args.includes("--github-annotations");
+  if (args.includes("--json") && githubAnnotations) {
+    throw new Error("Use either --json or --github-annotations, not both.");
+  }
   if (failOnValue && !SEVERITY_ORDER.includes(failOnValue)) {
     throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
   }
   return {
     json: args.includes("--json"),
     failOn: failOnValue,
-    outputPath
+    outputPath,
+    githubAnnotations
   };
 }
 function stripOptions(args) {
@@ -143,7 +148,7 @@ function stripOptions(args) {
   const optionsWithValues = /* @__PURE__ */ new Set(["--fail-on", "--output"]);
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-    if (arg === "--json") {
+    if (arg === "--json" || arg === "--github-annotations") {
       continue;
     }
     if (optionsWithValues.has(arg)) {
@@ -243,6 +248,46 @@ function formatScanOutput(output, options = { json: false }) {
   }
   return lines.join("\n");
 }
+function escapeGithubAnnotationValue(value) {
+  return value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+function escapeGithubAnnotationProperty(value) {
+  return escapeGithubAnnotationValue(value).replace(/,/g, "%2C").replace(/:/g, "%3A");
+}
+function getGithubAnnotationLevel(severity) {
+  if (severity === "critical" || severity === "high") {
+    return "error";
+  }
+  if (severity === "medium" || severity === "low") {
+    return "warning";
+  }
+  return "notice";
+}
+function formatGithubAnnotationOutput(output) {
+  const ruleMetadata = new Map(
+    getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
+  );
+  const lines = output.findings.map((finding) => {
+    const metadata = ruleMetadata.get(finding.ruleId);
+    const level = getGithubAnnotationLevel(finding.severity);
+    const file = escapeGithubAnnotationProperty(finding.location.filePath);
+    const title = escapeGithubAnnotationProperty(
+      `${finding.ruleId}${metadata ? ` - ${metadata.name}` : ""}`
+    );
+    const message = escapeGithubAnnotationValue(
+      `[${finding.severity}][${finding.category}] ${finding.message} ${finding.explanation}`
+    );
+    return `::${level} file=${file},line=${finding.location.startLine},col=${finding.location.startColumn},title=${title}::${message}`;
+  });
+  if (lines.length === 0) {
+    lines.push("NoHardText: no findings.");
+  } else {
+    lines.push(
+      `NoHardText: ${output.summary.totalFindings} finding(s). ${output.summary.shipReason} Score: ${output.summary.healthScore.score}/100.`
+    );
+  }
+  return lines.join("\n");
+}
 function runScan(targetPath, cwd = process.cwd(), options = { json: false }, config = {}) {
   return formatScanOutput(
     createScanOutput(targetPath, cwd, config, { failOn: options.failOn }),
@@ -261,6 +306,7 @@ async function runCli(args = process.argv.slice(2)) {
     console.log("  nohardtext scan <path>");
     console.log("  nohardtext scan <path> --json");
     console.log("  nohardtext scan <path> --json --output nohardtext-report.json");
+    console.log("  nohardtext scan <path> --github-annotations --fail-on high");
     console.log("  nohardtext scan <path> --fail-on high");
     console.log("  nohardtext rules");
     return;
@@ -278,7 +324,7 @@ async function runCli(args = process.argv.slice(2)) {
     const output = createScanOutput(target, process.cwd(), config, {
       failOn: options.failOn
     });
-    const renderedOutput = options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options);
+    const renderedOutput = options.githubAnnotations ? formatGithubAnnotationOutput(output) : options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options);
     if (options.outputPath) {
       writeFileSync(options.outputPath, renderedOutput);
     } else {
@@ -299,6 +345,7 @@ if (process.argv[1]?.endsWith("index.js")) {
 }
 export {
   createScanOutput,
+  formatGithubAnnotationOutput,
   formatScanOutput,
   getCliBanner,
   getIgnoredDirectories,
