@@ -1,4 +1,4 @@
-import type { Finding } from "@nohardtext/domain";
+import type { Finding } from "@nohardcoding/nohardtext-domain";
 import { describe, expect, it } from "vitest";
 import { createReportSummary } from "./index";
 
@@ -30,7 +30,7 @@ function createFinding(overrides: FindingOverrides = {}): Finding {
   };
 }
 
-describe("@nohardtext/report-engine", () => {
+describe("@nohardcoding/nohardtext-report-engine", () => {
   it("creates a summary and health score", () => {
     const summary = createReportSummary({
       findings: [createFinding()]

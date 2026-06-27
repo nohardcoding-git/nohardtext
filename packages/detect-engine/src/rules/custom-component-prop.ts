@@ -1,4 +1,4 @@
-import type { Finding } from "@nohardtext/domain";
+import type { Finding } from "@nohardcoding/nohardtext-domain";
 import { detectStringAttribute } from "./string-attribute";
 
 const DEFAULT_COMPONENT_TEXT_PROPS = [

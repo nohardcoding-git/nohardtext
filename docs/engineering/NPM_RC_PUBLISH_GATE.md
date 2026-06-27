@@ -1,6 +1,6 @@
 # npm RC Publish Gate
 
-Use this gate before publishing `0.1.0-rc.1` to npm.
+Use this gate before publishing `0.1.0-rc.2` to npm.
 
 ## Required State
 
@@ -19,7 +19,7 @@ nothing to commit, working tree clean
 Confirm tag exists:
 
 ```bash
-git tag --list "v0.1.0-rc.1"
+git tag --list "v0.1.0-rc.2"
 ```
 
 Confirm release checks pass:
@@ -53,7 +53,7 @@ npm login
 Before publishing scoped packages, confirm the npm account can publish under:
 
 ```txt
-@nohardtext
+@nohardcoding
 ```
 
 If the scope does not exist yet, create it or confirm org access on npm.
@@ -66,7 +66,7 @@ Use:
 rc
 ```
 
-Never use `latest` for `0.1.0-rc.1`.
+Never use `latest` for `0.1.0-rc.2`.
 
 ## Manual Publish Commands
 
@@ -103,14 +103,14 @@ cd ../..
 After publishing, run:
 
 ```bash
-npm view @nohardtext/cli@0.1.0-rc.1 version
-npm view @nohardtext/cli dist-tags
+npm view @nohardcoding/nohardtext@0.1.0-rc.2 version
+npm view @nohardcoding/nohardtext dist-tags
 ```
 
 Expected:
 
-- `0.1.0-rc.1` exists.
-- `rc` points to `0.1.0-rc.1`.
+- `0.1.0-rc.2` exists.
+- `rc` points to `0.1.0-rc.2`.
 - `latest` is not changed unintentionally.
 
 ## Fresh Install Smoke Test
@@ -121,7 +121,7 @@ Use a new temporary folder outside the repo:
 mkdir nohardtext-install-test
 cd nohardtext-install-test
 npm init -y
-npm install @nohardtext/cli@rc
+npm install @nohardcoding/nohardtext@rc
 npx nohardtext --version
 npx nohardtext --help
 cd ..
@@ -130,7 +130,7 @@ cd ..
 Expected version:
 
 ```txt
-NoHardText 0.1.0-rc.1
+NoHardText 0.1.0-rc.2
 ```
 
 ## Do Not Publish If

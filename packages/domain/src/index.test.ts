@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Finding, HealthScore } from "./index";
 
-describe("@nohardtext/domain", () => {
+describe("@nohardcoding/nohardtext-domain", () => {
   it("supports a finding model", () => {
     const finding: Finding = {
       id: "finding-1",

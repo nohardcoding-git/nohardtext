@@ -459,27 +459,27 @@ packages/
   rule-engine/
 ```
 
-### @nohardtext/domain
+### @nohardcoding/nohardtext-domain
 
 Shared domain types.
 
-### @nohardtext/parser
+### @nohardcoding/nohardtext-parser
 
 Parser utilities for JSX and TypeScript source.
 
-### @nohardtext/rule-engine
+### @nohardcoding/nohardtext-rule-engine
 
 Rule execution helpers.
 
-### @nohardtext/detect-engine
+### @nohardcoding/nohardtext-detect-engine
 
 Built-in detection rules.
 
-### @nohardtext/report-engine
+### @nohardcoding/nohardtext-report-engine
 
 Summary, health score, ship decision, breakdowns, and top issues.
 
-### @nohardtext/cli
+### @nohardcoding/nohardtext
 
 Command-line interface.
 

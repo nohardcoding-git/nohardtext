@@ -1,4 +1,4 @@
-import { Finding } from '@nohardtext/domain';
+import { Finding } from '@nohardcoding/nohardtext-domain';
 
 interface RuleContext {
     filePath: string;

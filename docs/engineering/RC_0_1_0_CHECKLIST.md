@@ -1,6 +1,6 @@
-# RC 0.1.0-rc.1 Manual Checklist
+# RC 0.1.0-rc.2 Manual Checklist
 
-Use this checklist before tagging or publishing `0.1.0-rc.1`.
+Use this checklist before tagging or publishing `0.1.0-rc.2`.
 
 ## Required Automated Checks
 
@@ -31,7 +31,7 @@ node packages/cli/dist/index.js scan examples/react-clean/src
 
 Expected:
 
-- `--version` prints `NoHardText 0.1.0-rc.1`.
+- `--version` prints `NoHardText 0.1.0-rc.2`.
 - `rules` prints all built-in rules.
 - `react-basic` produces findings.
 - `react-clean` produces zero findings.

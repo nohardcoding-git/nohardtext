@@ -17,19 +17,19 @@ import {
   shouldFail,
   shouldSkipDirectory,
 } from "./index";
-import type { Finding } from "@nohardtext/domain";
+import type { Finding } from "@nohardcoding/nohardtext-domain";
 
-describe("@nohardtext/cli", () => {
+describe("@nohardcoding/nohardtext", () => {
   it("returns the CLI banner", () => {
     expect(getCliBanner()).toBe("NoHardText CLI");
   });
 
   it("returns the CLI version", () => {
-    expect(getCliVersion()).toBe("0.1.0-rc.1");
+    expect(getCliVersion()).toBe("0.1.0-rc.2");
   });
 
   it("formats version output", () => {
-    expect(formatVersionOutput()).toBe("NoHardText 0.1.0-rc.1");
+    expect(formatVersionOutput()).toBe("NoHardText 0.1.0-rc.2");
   });
 
   it("formats help output", () => {
@@ -197,7 +197,7 @@ describe("@nohardtext/cli", () => {
     expect(Number.isNaN(Date.parse(parsed.generatedAt))).toBe(false);
     expect(parsed.tool).toEqual({
       name: "NoHardText",
-      version: "0.1.0-rc.1",
+      version: "0.1.0-rc.2",
     });
 
     expect(parsed.ci).toEqual({

@@ -1,4 +1,4 @@
-import type { Finding, RuleMetadata } from "@nohardtext/domain";
+import type { Finding, RuleMetadata } from "@nohardcoding/nohardtext-domain";
 import { detectAltAttributeText } from "./alt";
 import { detectAriaLabelText } from "./aria-label";
 import { detectJsxText } from "./jsx-text";

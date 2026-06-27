@@ -1,4 +1,4 @@
-import { Finding, HealthScore, ScanResult } from '@nohardtext/domain';
+import { Finding, HealthScore, ScanResult } from '@nohardcoding/nohardtext-domain';
 
 type ShipDecision = "yes" | "warning" | "no";
 interface BreakdownSummary {

@@ -1,18 +1,18 @@
 # Post-publish Verification
 
-Use this checklist after publishing `0.1.0-rc.1`.
+Use this checklist after publishing `0.1.0-rc.2`.
 
 ## npm Metadata
 
 Check each package:
 
 ```bash
-npm view @nohardtext/domain@0.1.0-rc.1 version
-npm view @nohardtext/parser@0.1.0-rc.1 version
-npm view @nohardtext/rule-engine@0.1.0-rc.1 version
-npm view @nohardtext/report-engine@0.1.0-rc.1 version
-npm view @nohardtext/detect-engine@0.1.0-rc.1 version
-npm view @nohardtext/cli@0.1.0-rc.1 version
+npm view @nohardcoding/nohardtext-domain@0.1.0-rc.2 version
+npm view @nohardcoding/nohardtext-parser@0.1.0-rc.2 version
+npm view @nohardcoding/nohardtext-rule-engine@0.1.0-rc.2 version
+npm view @nohardcoding/nohardtext-report-engine@0.1.0-rc.2 version
+npm view @nohardcoding/nohardtext-detect-engine@0.1.0-rc.2 version
+npm view @nohardcoding/nohardtext@0.1.0-rc.2 version
 ```
 
 ## Dist Tags
@@ -20,13 +20,13 @@ npm view @nohardtext/cli@0.1.0-rc.1 version
 Check:
 
 ```bash
-npm view @nohardtext/cli dist-tags
+npm view @nohardcoding/nohardtext dist-tags
 ```
 
 Expected:
 
 ```txt
-rc: 0.1.0-rc.1
+rc: 0.1.0-rc.2
 ```
 
 The `latest` tag should not point to the RC unless intentionally changed later.
@@ -39,7 +39,7 @@ Create a temporary test project:
 mkdir nohardtext-install-test
 cd nohardtext-install-test
 npm init -y
-npm install @nohardtext/cli@rc
+npm install @nohardcoding/nohardtext@rc
 ```
 
 Create a small file:
@@ -66,7 +66,7 @@ npx nohardtext scan src --json --output nohardtext-report.json
 
 Expected:
 
-- version prints `NoHardText 0.1.0-rc.1`
+- version prints `NoHardText 0.1.0-rc.2`
 - scan finds hardcoded JSX text
 - JSON report is created
 

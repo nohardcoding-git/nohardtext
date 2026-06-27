@@ -1,6 +1,6 @@
 {
-  "name": "@nohardtext/rule-engine",
-  "version": "0.1.0-rc.1",
+  "name": "@nohardcoding/nohardtext-rule-engine",
+  "version": "0.1.0-rc.2",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@nohardtext/domain": "workspace:*"
+    "@nohardcoding/nohardtext-domain": "workspace:*"
   },
   "description": "Rule execution engine for NoHardText.",
   "keywords": [

@@ -9,7 +9,7 @@ The goal is to publish packages carefully, in dependency order, using the `rc` n
 ## Current RC
 
 ```txt
-0.1.0-rc.1
+0.1.0-rc.2
 ```
 
 ## Dist Tag
@@ -26,12 +26,12 @@ Do not publish the release candidate with the `latest` dist-tag.
 
 Publish packages in this order:
 
-1. `@nohardtext/domain`
-2. `@nohardtext/parser`
-3. `@nohardtext/rule-engine`
-4. `@nohardtext/report-engine`
-5. `@nohardtext/detect-engine`
-6. `@nohardtext/cli`
+1. `@nohardcoding/nohardtext-domain`
+2. `@nohardcoding/nohardtext-parser`
+3. `@nohardcoding/nohardtext-rule-engine`
+4. `@nohardcoding/nohardtext-report-engine`
+5. `@nohardcoding/nohardtext-detect-engine`
+6. `@nohardcoding/nohardtext`
 
 ## Why This Order?
 
@@ -90,14 +90,14 @@ Repeat for every package in the publish order.
 Check the CLI package:
 
 ```bash
-npm view @nohardtext/cli@0.1.0-rc.1 version
-npm view @nohardtext/cli dist-tags
+npm view @nohardcoding/nohardtext@0.1.0-rc.2 version
+npm view @nohardcoding/nohardtext dist-tags
 ```
 
 Expected:
 
 - version exists
-- `rc` points to `0.1.0-rc.1`
+- `rc` points to `0.1.0-rc.2`
 - `latest` is not changed unless intentionally released later
 
 ## Do Not Publish If

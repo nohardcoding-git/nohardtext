@@ -1,6 +1,6 @@
 {
-  "name": "@nohardtext/cli",
-  "version": "0.1.0-rc.1",
+  "name": "@nohardcoding/nohardtext",
+  "version": "0.1.0-rc.2",
   "private": true,
   "type": "module",
   "bin": {
@@ -14,9 +14,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@nohardtext/detect-engine": "workspace:*",
-    "@nohardtext/domain": "workspace:*",
-    "@nohardtext/report-engine": "workspace:*"
+    "@nohardcoding/nohardtext-detect-engine": "workspace:*",
+    "@nohardcoding/nohardtext-domain": "workspace:*",
+    "@nohardcoding/nohardtext-report-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0"

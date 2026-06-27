@@ -5,12 +5,12 @@ const workspaceRoot = process.cwd();
 const expectedTag = "rc";
 
 const packages = [
-  { name: "@nohardtext/domain", dir: "packages/domain" },
-  { name: "@nohardtext/parser", dir: "packages/parser" },
-  { name: "@nohardtext/rule-engine", dir: "packages/rule-engine" },
-  { name: "@nohardtext/report-engine", dir: "packages/report-engine" },
-  { name: "@nohardtext/detect-engine", dir: "packages/detect-engine" },
-  { name: "@nohardtext/cli", dir: "packages/cli" }
+  { name: "@nohardcoding/nohardtext-domain", dir: "packages/domain" },
+  { name: "@nohardcoding/nohardtext-parser", dir: "packages/parser" },
+  { name: "@nohardcoding/nohardtext-rule-engine", dir: "packages/rule-engine" },
+  { name: "@nohardcoding/nohardtext-report-engine", dir: "packages/report-engine" },
+  { name: "@nohardcoding/nohardtext-detect-engine", dir: "packages/detect-engine" },
+  { name: "@nohardcoding/nohardtext", dir: "packages/cli" }
 ];
 
 function readJson(filePath) {
@@ -61,7 +61,7 @@ for (const [index, packageInfo] of packages.entries()) {
   assert(packageJson.types === "dist/index.d.ts", packageInfo.name + " types must be dist/index.d.ts.");
   assert(Array.isArray(packageJson.files) && packageJson.files.includes("dist"), packageInfo.name + " files must include dist.");
 
-  if (packageInfo.name === "@nohardtext/cli") {
+  if (packageInfo.name === "@nohardcoding/nohardtext") {
     assert(packageJson.bin && packageJson.bin.nohardtext === "dist/index.js", "CLI package must expose nohardtext bin.");
   }
 
@@ -80,8 +80,8 @@ for (const packageInfo of packages) {
 }
 
 console.log("Post-publish checks:");
-console.log("  npm view @nohardtext/cli@" + expectedVersion + " version");
-console.log("  npm view @nohardtext/cli dist-tags");
+console.log("  npm view @nohardcoding/nohardtext@" + expectedVersion + " version");
+console.log("  npm view @nohardcoding/nohardtext dist-tags");
 console.log("");
 console.log("Important:");
 console.log("- Do not use the latest dist-tag for an RC.");

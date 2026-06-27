@@ -2,14 +2,14 @@
 
 import { existsSync, mkdirSync, readFileSync, statSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
-import type { Finding, Severity } from "@nohardtext/domain";
-import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
+import type { Finding, Severity } from "@nohardcoding/nohardtext-domain";
+import { detect, getBuiltInRuleMetadata } from "@nohardcoding/nohardtext-detect-engine";
 import {
   createReportSummary,
   type ReportSummary,
-} from "@nohardtext/report-engine";
+} from "@nohardcoding/nohardtext-report-engine";
 
-const TOOL_VERSION = "0.1.0-rc.1";
+const TOOL_VERSION = "0.1.0-rc.2";
 
 const SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 

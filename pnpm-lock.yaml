@@ -20,13 +20,13 @@ importers:
 
   packages/cli:
     dependencies:
-      '@nohardtext/detect-engine':
+      '@nohardcoding/nohardtext-detect-engine':
         specifier: workspace:*
         version: link:../detect-engine
-      '@nohardtext/domain':
+      '@nohardcoding/nohardtext-domain':
         specifier: workspace:*
         version: link:../domain
-      '@nohardtext/report-engine':
+      '@nohardcoding/nohardtext-report-engine':
         specifier: workspace:*
         version: link:../report-engine
     devDependencies:
@@ -36,13 +36,13 @@ importers:
 
   packages/detect-engine:
     dependencies:
-      '@nohardtext/domain':
+      '@nohardcoding/nohardtext-domain':
         specifier: workspace:*
         version: link:../domain
-      '@nohardtext/parser':
+      '@nohardcoding/nohardtext-parser':
         specifier: workspace:*
         version: link:../parser
-      '@nohardtext/rule-engine':
+      '@nohardcoding/nohardtext-rule-engine':
         specifier: workspace:*
         version: link:../rule-engine
 
@@ -66,13 +66,13 @@ importers:
 
   packages/report-engine:
     dependencies:
-      '@nohardtext/domain':
+      '@nohardcoding/nohardtext-domain':
         specifier: workspace:*
         version: link:../domain
 
   packages/rule-engine:
     dependencies:
-      '@nohardtext/domain':
+      '@nohardcoding/nohardtext-domain':
         specifier: workspace:*
         version: link:../domain
 

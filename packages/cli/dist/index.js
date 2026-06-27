@@ -3,11 +3,11 @@
 // src/index.ts
 import { existsSync, mkdirSync, readFileSync, statSync, readdirSync, writeFileSync } from "fs";
 import { dirname, join, relative } from "path";
-import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
+import { detect, getBuiltInRuleMetadata } from "@nohardcoding/nohardtext-detect-engine";
 import {
   createReportSummary
-} from "@nohardtext/report-engine";
-var TOOL_VERSION = "0.1.0-rc.1";
+} from "@nohardcoding/nohardtext-report-engine";
+var TOOL_VERSION = "0.1.0-rc.2";
 var SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 var DEFAULT_IGNORED_DIRECTORIES = [
   "node_modules",

@@ -1,8 +1,8 @@
-import type { Finding } from "@nohardtext/domain";
+import type { Finding } from "@nohardcoding/nohardtext-domain";
 import {
   collectJsxExpressionStringValues,
   collectJsxTextNodes
-} from "@nohardtext/parser";
+} from "@nohardcoding/nohardtext-parser";
 import { isProbablyLocalizableText } from "./text-utils";
 
 interface LocalizableTextNode {

@@ -1,8 +1,8 @@
 // src/index.ts
-import { runRules } from "@nohardtext/rule-engine";
+import { runRules } from "@nohardcoding/nohardtext-rule-engine";
 
 // src/rules/string-attribute.ts
-import { collectJsxAttributeStringValues } from "@nohardtext/parser";
+import { collectJsxAttributeStringValues } from "@nohardcoding/nohardtext-parser";
 
 // src/rules/text-utils.ts
 var LETTER_PATTERN = /\p{L}/u;
@@ -93,7 +93,7 @@ function detectAriaLabelText(filePath, sourceText) {
 import {
   collectJsxExpressionStringValues,
   collectJsxTextNodes
-} from "@nohardtext/parser";
+} from "@nohardcoding/nohardtext-parser";
 function createJsxTextFinding(filePath, node, index) {
   return {
     id: `${filePath}:NHT1001:${node.startLine}:${node.startColumn}:${index}`,

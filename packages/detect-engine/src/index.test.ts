@@ -9,9 +9,9 @@ import {
   detectCustomComponentPropText,
   sortFindingsByLocation
 } from "./index";
-import type { Rule } from "@nohardtext/rule-engine";
+import type { Rule } from "@nohardcoding/nohardtext-rule-engine";
 
-describe("@nohardtext/detect-engine", () => {
+describe("@nohardcoding/nohardtext-detect-engine", () => {
   it("detects hardcoded JSX text", () => {
     const findings = detectJsxText(
       "src/App.tsx",

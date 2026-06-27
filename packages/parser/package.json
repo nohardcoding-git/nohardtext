@@ -1,6 +1,6 @@
 {
-  "name": "@nohardtext/parser",
-  "version": "0.1.0-rc.1",
+  "name": "@nohardcoding/nohardtext-parser",
+  "version": "0.1.0-rc.2",
   "private": true,
   "type": "module",
   "main": "dist/index.js",

@@ -5,7 +5,7 @@ import {
   parseSource
 } from "./index";
 
-describe("@nohardtext/parser", () => {
+describe("@nohardcoding/nohardtext-parser", () => {
   it("parses TSX source", () => {
     const ast = parseSource("export default function App() { return <h1>Welcome</h1>; }");
 

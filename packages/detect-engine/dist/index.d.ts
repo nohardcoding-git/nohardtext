@@ -1,21 +1,21 @@
-import * as _nohardtext_domain from '@nohardtext/domain';
-import { RuleMetadata, Finding } from '@nohardtext/domain';
-import { Rule } from '@nohardtext/rule-engine';
+import * as _nohardcoding_nohardtext_domain from '@nohardcoding/nohardtext-domain';
+import { RuleMetadata, Finding } from '@nohardcoding/nohardtext-domain';
+import { Rule } from '@nohardcoding/nohardtext-rule-engine';
 
 interface BuiltInRuleOptions {
     componentTextProps?: string[];
 }
 declare function getBuiltInRuleMetadata(): RuleMetadata[];
 
-declare function detectAltAttributeText(filePath: string, sourceText: string): _nohardtext_domain.Finding[];
+declare function detectAltAttributeText(filePath: string, sourceText: string): _nohardcoding_nohardtext_domain.Finding[];
 
-declare function detectAriaLabelText(filePath: string, sourceText: string): _nohardtext_domain.Finding[];
+declare function detectAriaLabelText(filePath: string, sourceText: string): _nohardcoding_nohardtext_domain.Finding[];
 
 declare function detectJsxText(filePath: string, sourceText: string): Finding[];
 
-declare function detectPlaceholderText(filePath: string, sourceText: string): _nohardtext_domain.Finding[];
+declare function detectPlaceholderText(filePath: string, sourceText: string): _nohardcoding_nohardtext_domain.Finding[];
 
-declare function detectTitleAttributeText(filePath: string, sourceText: string): _nohardtext_domain.Finding[];
+declare function detectTitleAttributeText(filePath: string, sourceText: string): _nohardcoding_nohardtext_domain.Finding[];
 
 interface ComponentTextPropOptions {
     propNames?: string[];

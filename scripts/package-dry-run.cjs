@@ -6,12 +6,12 @@ const workspaceRoot = process.cwd();
 const packOutputDir = path.join(workspaceRoot, ".nohardtext-pack-check");
 
 const packages = [
-  { name: "@nohardtext/domain", dir: "packages/domain", requiresBin: false },
-  { name: "@nohardtext/parser", dir: "packages/parser", requiresBin: false },
-  { name: "@nohardtext/rule-engine", dir: "packages/rule-engine", requiresBin: false },
-  { name: "@nohardtext/detect-engine", dir: "packages/detect-engine", requiresBin: false },
-  { name: "@nohardtext/report-engine", dir: "packages/report-engine", requiresBin: false },
-  { name: "@nohardtext/cli", dir: "packages/cli", requiresBin: true }
+  { name: "@nohardcoding/nohardtext-domain", dir: "packages/domain", requiresBin: false },
+  { name: "@nohardcoding/nohardtext-parser", dir: "packages/parser", requiresBin: false },
+  { name: "@nohardcoding/nohardtext-rule-engine", dir: "packages/rule-engine", requiresBin: false },
+  { name: "@nohardcoding/nohardtext-detect-engine", dir: "packages/detect-engine", requiresBin: false },
+  { name: "@nohardcoding/nohardtext-report-engine", dir: "packages/report-engine", requiresBin: false },
+  { name: "@nohardcoding/nohardtext", dir: "packages/cli", requiresBin: true }
 ];
 
 function run(command, cwd) {

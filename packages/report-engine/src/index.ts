@@ -1,4 +1,4 @@
-import type { Finding, HealthScore, ScanResult } from "@nohardtext/domain";
+import type { Finding, HealthScore, ScanResult } from "@nohardcoding/nohardtext-domain";
 
 export type ShipDecision = "yes" | "warning" | "no";
 

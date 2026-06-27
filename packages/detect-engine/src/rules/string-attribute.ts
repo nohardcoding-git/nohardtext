@@ -1,5 +1,5 @@
-import type { Category, Finding, Severity } from "@nohardtext/domain";
-import { collectJsxAttributeStringValues } from "@nohardtext/parser";
+import type { Category, Finding, Severity } from "@nohardcoding/nohardtext-domain";
+import { collectJsxAttributeStringValues } from "@nohardcoding/nohardtext-parser";
 import { isProbablyLocalizableText } from "./text-utils";
 
 export interface AttributeRuleConfig {

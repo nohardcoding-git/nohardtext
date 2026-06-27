@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { Severity, Finding } from '@nohardtext/domain';
-import { ReportSummary } from '@nohardtext/report-engine';
+import { Severity, Finding } from '@nohardcoding/nohardtext-domain';
+import { ReportSummary } from '@nohardcoding/nohardtext-report-engine';
 
 interface NoHardTextConfig {
     ignore?: string[];

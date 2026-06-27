@@ -1,5 +1,5 @@
-import type { Finding } from "@nohardtext/domain";
-import { runRules, type Rule } from "@nohardtext/rule-engine";
+import type { Finding } from "@nohardcoding/nohardtext-domain";
+import { runRules, type Rule } from "@nohardcoding/nohardtext-rule-engine";
 
 import {
   builtInRules,

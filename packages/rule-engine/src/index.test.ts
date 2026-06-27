@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runRules, type Rule } from './index';
 
-describe('@nohardtext/rule-engine', () => {
+describe('@nohardcoding/nohardtext-rule-engine', () => {
   it('runs rules and returns findings', () => {
     const rule: Rule = {
       id: 'NHT1001',
