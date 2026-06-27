@@ -7,7 +7,8 @@
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "release:check": "node scripts/release-check.cjs"
   },
   "devDependencies": {
     "typescript": "^5.5.4",

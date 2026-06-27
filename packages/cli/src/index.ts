@@ -49,7 +49,9 @@ export interface ScanOutput {
     name: "NoHardText";
     version: string;
   };
+  generatedAt: string;
   scannedFiles: number;
+  files: string[];
   findings: Finding[];
   summary: ReportSummary;
   ci: {
@@ -320,6 +322,7 @@ export function createScanOutput(
 ): ScanOutput {
   const ignoredDirectories = getIgnoredDirectories(config);
   const files = collectFiles(targetPath, ignoredDirectories);
+  const scannedFilePaths = files.map((filePath) => relative(cwd, filePath));
 
   const findings = files.flatMap((filePath) => {
     const sourceText = readFileSync(filePath, "utf8");
@@ -338,11 +341,13 @@ export function createScanOutput(
 
   return {
     schemaVersion: "1.0",
+    generatedAt: new Date().toISOString(),
     tool: {
       name: "NoHardText",
       version: TOOL_VERSION,
     },
     scannedFiles: files.length,
+    files: scannedFilePaths,
     findings,
     summary,
     ci: {

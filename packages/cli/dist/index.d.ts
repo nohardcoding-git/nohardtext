@@ -13,7 +13,9 @@ interface ScanOutput {
         name: "NoHardText";
         version: string;
     };
+    generatedAt: string;
     scannedFiles: number;
+    files: string[];
     findings: Finding[];
     summary: ReportSummary;
     ci: {

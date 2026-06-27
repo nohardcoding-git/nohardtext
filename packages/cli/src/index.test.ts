@@ -193,6 +193,8 @@ describe("@nohardtext/cli", () => {
     const parsed = JSON.parse(output);
 
     expect(parsed.schemaVersion).toBe("1.0");
+    expect(typeof parsed.generatedAt).toBe("string");
+    expect(Number.isNaN(Date.parse(parsed.generatedAt))).toBe(false);
     expect(parsed.tool).toEqual({
       name: "NoHardText",
       version: "0.0.0",
@@ -204,6 +206,8 @@ describe("@nohardtext/cli", () => {
     });
 
     expect(parsed.scannedFiles).toBe(1);
+    expect(parsed.files).toHaveLength(1);
+    expect(parsed.files[0]).toContain("App.tsx");
     expect(parsed.findings.length).toBeGreaterThan(0);
     expect(parsed.summary.totalFindings).toBe(parsed.findings.length);
   });

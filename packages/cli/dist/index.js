@@ -210,6 +210,7 @@ function runRulesList() {
 function createScanOutput(targetPath, cwd = process.cwd(), config = {}, options = {}) {
   const ignoredDirectories = getIgnoredDirectories(config);
   const files = collectFiles(targetPath, ignoredDirectories);
+  const scannedFilePaths = files.map((filePath) => relative(cwd, filePath));
   const findings = files.flatMap((filePath) => {
     const sourceText = readFileSync(filePath, "utf8");
     return detect({
@@ -224,11 +225,13 @@ function createScanOutput(targetPath, cwd = process.cwd(), config = {}, options 
   const failOn = options.failOn ?? config.failOn;
   return {
     schemaVersion: "1.0",
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
     tool: {
       name: "NoHardText",
       version: TOOL_VERSION
     },
     scannedFiles: files.length,
+    files: scannedFilePaths,
     findings,
     summary,
     ci: {
