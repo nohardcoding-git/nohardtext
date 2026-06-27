@@ -9,6 +9,8 @@ import {
   type ReportSummary,
 } from "@nohardtext/report-engine";
 
+const TOOL_VERSION = "0.0.0";
+
 const SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
 const DEFAULT_IGNORED_DIRECTORIES = [
@@ -70,6 +72,34 @@ export interface ScanOutputOptions {
 
 export function getCliBanner(): string {
   return "NoHardText CLI";
+}
+
+export function getCliVersion(): string {
+  return TOOL_VERSION;
+}
+
+export function formatVersionOutput(): string {
+  return `NoHardText ${getCliVersion()}`;
+}
+
+export function formatHelpOutput(): string {
+  return [
+    "Usage:",
+    "  nohardtext scan <path>",
+    "  nohardtext scan <path> --json",
+    "  nohardtext scan <path> --json --output nohardtext-report.json",
+    "  nohardtext scan <path> --github-annotations --fail-on high",
+    "  nohardtext scan <path> --fail-on high",
+    "  nohardtext rules",
+    "",
+    "Options:",
+    "  --json                  Print JSON report output.",
+    "  --output <path>          Write output to a file.",
+    "  --github-annotations    Print GitHub Actions annotation output.",
+    "  --fail-on <severity>     Exit with code 1 when findings meet the threshold.",
+    "  --version, -v            Print CLI version.",
+    "  --help, -h               Print help.",
+  ].join("\n");
 }
 
 function normalizeFailOn(value: unknown): Severity | undefined {
@@ -310,7 +340,7 @@ export function createScanOutput(
     schemaVersion: "1.0",
     tool: {
       name: "NoHardText",
-      version: "0.0.0",
+      version: TOOL_VERSION,
     },
     scannedFiles: files.length,
     findings,
@@ -462,13 +492,12 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
   const [command, target = "."] = normalizedArgs;
 
   if (!command || command === "--help" || command === "-h") {
-    console.log("Usage:");
-    console.log("  nohardtext scan <path>");
-    console.log("  nohardtext scan <path> --json");
-    console.log("  nohardtext scan <path> --json --output nohardtext-report.json");
-    console.log("  nohardtext scan <path> --github-annotations --fail-on high");
-    console.log("  nohardtext scan <path> --fail-on high");
-    console.log("  nohardtext rules");
+    console.log(formatHelpOutput());
+    return;
+  }
+
+  if (command === "--version" || command === "-v") {
+    console.log(formatVersionOutput());
     return;
   }
 

@@ -7,6 +7,7 @@ import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import {
   createReportSummary
 } from "@nohardtext/report-engine";
+var TOOL_VERSION = "0.0.0";
 var SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 var DEFAULT_IGNORED_DIRECTORIES = [
   "node_modules",
@@ -31,6 +32,31 @@ var ALLOWED_CONFIG_KEYS = /* @__PURE__ */ new Set([
 ]);
 function getCliBanner() {
   return "NoHardText CLI";
+}
+function getCliVersion() {
+  return TOOL_VERSION;
+}
+function formatVersionOutput() {
+  return `NoHardText ${getCliVersion()}`;
+}
+function formatHelpOutput() {
+  return [
+    "Usage:",
+    "  nohardtext scan <path>",
+    "  nohardtext scan <path> --json",
+    "  nohardtext scan <path> --json --output nohardtext-report.json",
+    "  nohardtext scan <path> --github-annotations --fail-on high",
+    "  nohardtext scan <path> --fail-on high",
+    "  nohardtext rules",
+    "",
+    "Options:",
+    "  --json                  Print JSON report output.",
+    "  --output <path>          Write output to a file.",
+    "  --github-annotations    Print GitHub Actions annotation output.",
+    "  --fail-on <severity>     Exit with code 1 when findings meet the threshold.",
+    "  --version, -v            Print CLI version.",
+    "  --help, -h               Print help."
+  ].join("\n");
 }
 function normalizeFailOn(value) {
   if (value === void 0) {
@@ -200,7 +226,7 @@ function createScanOutput(targetPath, cwd = process.cwd(), config = {}, options 
     schemaVersion: "1.0",
     tool: {
       name: "NoHardText",
-      version: "0.0.0"
+      version: TOOL_VERSION
     },
     scannedFiles: files.length,
     findings,
@@ -309,13 +335,11 @@ async function runCli(args = process.argv.slice(2)) {
   const normalizedArgs = stripOptions(args);
   const [command, target = "."] = normalizedArgs;
   if (!command || command === "--help" || command === "-h") {
-    console.log("Usage:");
-    console.log("  nohardtext scan <path>");
-    console.log("  nohardtext scan <path> --json");
-    console.log("  nohardtext scan <path> --json --output nohardtext-report.json");
-    console.log("  nohardtext scan <path> --github-annotations --fail-on high");
-    console.log("  nohardtext scan <path> --fail-on high");
-    console.log("  nohardtext rules");
+    console.log(formatHelpOutput());
+    return;
+  }
+  if (command === "--version" || command === "-v") {
+    console.log(formatVersionOutput());
     return;
   }
   if (command === "rules") {
@@ -353,8 +377,11 @@ if (process.argv[1]?.endsWith("index.js")) {
 export {
   createScanOutput,
   formatGithubAnnotationOutput,
+  formatHelpOutput,
   formatScanOutput,
+  formatVersionOutput,
   getCliBanner,
+  getCliVersion,
   getIgnoredDirectories,
   loadConfig,
   runCli,

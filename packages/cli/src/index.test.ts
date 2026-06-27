@@ -4,7 +4,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   formatGithubAnnotationOutput,
+  formatHelpOutput,
+  formatVersionOutput,
   getCliBanner,
+  getCliVersion,
   getIgnoredDirectories,
   loadConfig,
   runRulesList,
@@ -19,6 +22,23 @@ import type { Finding } from "@nohardtext/domain";
 describe("@nohardtext/cli", () => {
   it("returns the CLI banner", () => {
     expect(getCliBanner()).toBe("NoHardText CLI");
+  });
+
+  it("returns the CLI version", () => {
+    expect(getCliVersion()).toBe("0.0.0");
+  });
+
+  it("formats version output", () => {
+    expect(formatVersionOutput()).toBe("NoHardText 0.0.0");
+  });
+
+  it("formats help output", () => {
+    const output = formatHelpOutput();
+
+    expect(output).toContain("Usage:");
+    expect(output).toContain("nohardtext scan <path> --json");
+    expect(output).toContain("--github-annotations");
+    expect(output).toContain("--version, -v");
   });
 
   it("loads nohardtext config", () => {

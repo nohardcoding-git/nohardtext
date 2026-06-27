@@ -32,6 +32,9 @@ interface ScanOutputOptions {
     failOn?: Severity;
 }
 declare function getCliBanner(): string;
+declare function getCliVersion(): string;
+declare function formatVersionOutput(): string;
+declare function formatHelpOutput(): string;
 declare function loadConfig(cwd?: string): NoHardTextConfig;
 declare function getIgnoredDirectories(config?: NoHardTextConfig): Set<string>;
 declare function shouldSkipDirectory(directoryName: string, ignoredDirectories?: Set<string>): boolean;
@@ -44,4 +47,4 @@ declare function runScan(targetPath: string, cwd?: string, options?: CliOptions,
 declare function runScanJson(targetPath: string, cwd?: string, config?: NoHardTextConfig, options?: ScanOutputOptions): string;
 declare function runCli(args?: string[]): Promise<void>;
 
-export { type CliOptions, type NoHardTextConfig, type ScanOutput, type ScanOutputOptions, createScanOutput, formatGithubAnnotationOutput, formatScanOutput, getCliBanner, getIgnoredDirectories, loadConfig, runCli, runRulesList, runScan, runScanJson, shouldFail, shouldSkipDirectory };
+export { type CliOptions, type NoHardTextConfig, type ScanOutput, type ScanOutputOptions, createScanOutput, formatGithubAnnotationOutput, formatHelpOutput, formatScanOutput, formatVersionOutput, getCliBanner, getCliVersion, getIgnoredDirectories, loadConfig, runCli, runRulesList, runScan, runScanJson, shouldFail, shouldSkipDirectory };
