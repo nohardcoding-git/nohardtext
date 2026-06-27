@@ -8,7 +8,8 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "release:check": "node scripts/release-check.cjs"
+    "release:check": "node scripts/release-check.cjs",
+    "release:pack": "pnpm build && node scripts/package-dry-run.cjs"
   },
   "devDependencies": {
     "typescript": "^5.5.4",
