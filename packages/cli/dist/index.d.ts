@@ -25,6 +25,7 @@ interface ScanOutput {
 interface CliOptions {
     json: boolean;
     failOn?: Severity;
+    outputPath?: string;
 }
 interface ScanOutputOptions {
     failOn?: Severity;

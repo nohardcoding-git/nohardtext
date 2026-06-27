@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // src/index.ts
-import { existsSync, readFileSync, statSync, readdirSync } from "fs";
+import { existsSync, readFileSync, statSync, readdirSync, writeFileSync } from "fs";
 import { join, relative } from "path";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import {
@@ -83,28 +83,38 @@ function collectFiles(targetPath, ignoredDirectories) {
     return isSupportedFile(fullPath) ? [fullPath] : [];
   });
 }
-function parseOptions(args) {
-  const failOnIndex = args.indexOf("--fail-on");
-  const failOnValue = failOnIndex >= 0 ? args[failOnIndex + 1] : void 0;
-  if (failOnIndex >= 0 && (!failOnValue || failOnValue.startsWith("--"))) {
-    throw new Error("Missing value for --fail-on");
+function getRequiredOptionValue(args, optionName) {
+  const optionIndex = args.indexOf(optionName);
+  if (optionIndex < 0) {
+    return void 0;
   }
+  const value = args[optionIndex + 1];
+  if (!value || value.startsWith("--")) {
+    throw new Error(`Missing value for ${optionName}`);
+  }
+  return value;
+}
+function parseOptions(args) {
+  const failOnValue = getRequiredOptionValue(args, "--fail-on");
+  const outputPath = getRequiredOptionValue(args, "--output");
   if (failOnValue && !SEVERITY_ORDER.includes(failOnValue)) {
     throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
   }
   return {
     json: args.includes("--json"),
-    failOn: failOnValue
+    failOn: failOnValue,
+    outputPath
   };
 }
 function stripOptions(args) {
   const result = [];
+  const optionsWithValues = /* @__PURE__ */ new Set(["--fail-on", "--output"]);
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--json") {
       continue;
     }
-    if (arg === "--fail-on") {
+    if (optionsWithValues.has(arg)) {
       index += 1;
       continue;
     }
@@ -218,6 +228,7 @@ async function runCli(args = process.argv.slice(2)) {
     console.log("Usage:");
     console.log("  nohardtext scan <path>");
     console.log("  nohardtext scan <path> --json");
+    console.log("  nohardtext scan <path> --json --output nohardtext-report.json");
     console.log("  nohardtext scan <path> --fail-on high");
     console.log("  nohardtext rules");
     return;
@@ -235,9 +246,12 @@ async function runCli(args = process.argv.slice(2)) {
     const output = createScanOutput(target, process.cwd(), config, {
       failOn: options.failOn
     });
-    console.log(
-      options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options)
-    );
+    const renderedOutput = options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options);
+    if (options.outputPath) {
+      writeFileSync(options.outputPath, renderedOutput);
+    } else {
+      console.log(renderedOutput);
+    }
     if (!output.ci.passed) {
       process.exitCode = 1;
     }

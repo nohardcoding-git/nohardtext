@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -9,6 +9,7 @@ import {
   runRulesList,
   runScan,
   runScanJson,
+  runCli,
   shouldFail,
   shouldSkipDirectory,
 } from "./index";
@@ -109,6 +110,37 @@ describe("@nohardtext/cli", () => {
       failOn: "high",
       passed: false,
     });
+  });
+
+  it("writes scan output to a file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      const sourcePath = join(dir, "App.tsx");
+      const outputPath = join(dir, "nohardtext-report.json");
+
+      writeFileSync(
+        sourcePath,
+        `
+          export default function App() {
+            return <button>Save</button>;
+          }
+        `,
+      );
+
+      await runCli(["scan", sourcePath, "--json", "--output", outputPath]);
+
+      expect(existsSync(outputPath)).toBe(true);
+
+      const parsed = JSON.parse(readFileSync(outputPath, "utf8"));
+
+      expect(parsed.schemaVersion).toBe("1.0");
+      expect(parsed.tool.name).toBe("NoHardText");
+      expect(parsed.scannedFiles).toBe(1);
+      expect(parsed.findings.length).toBeGreaterThan(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("detects CI failure threshold", () => {

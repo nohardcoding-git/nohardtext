@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, statSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, statSync, readdirSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Finding, Severity } from "@nohardtext/domain";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
@@ -54,6 +54,7 @@ export interface ScanOutput {
 export interface CliOptions {
   json: boolean;
   failOn?: Severity;
+  outputPath?: string;
 }
 
 export interface ScanOutputOptions {
@@ -154,13 +155,25 @@ function collectFiles(
   });
 }
 
-function parseOptions(args: string[]): CliOptions {
-  const failOnIndex = args.indexOf("--fail-on");
-  const failOnValue = failOnIndex >= 0 ? args[failOnIndex + 1] : undefined;
+function getRequiredOptionValue(args: string[], optionName: string): string | undefined {
+  const optionIndex = args.indexOf(optionName);
 
-  if (failOnIndex >= 0 && (!failOnValue || failOnValue.startsWith("--"))) {
-    throw new Error("Missing value for --fail-on");
+  if (optionIndex < 0) {
+    return undefined;
   }
+
+  const value = args[optionIndex + 1];
+
+  if (!value || value.startsWith("--")) {
+    throw new Error(`Missing value for ${optionName}`);
+  }
+
+  return value;
+}
+
+function parseOptions(args: string[]): CliOptions {
+  const failOnValue = getRequiredOptionValue(args, "--fail-on");
+  const outputPath = getRequiredOptionValue(args, "--output");
 
   if (failOnValue && !SEVERITY_ORDER.includes(failOnValue as Severity)) {
     throw new Error(`Invalid --fail-on severity: ${failOnValue}`);
@@ -169,11 +182,13 @@ function parseOptions(args: string[]): CliOptions {
   return {
     json: args.includes("--json"),
     failOn: failOnValue as Severity | undefined,
+    outputPath,
   };
 }
 
 function stripOptions(args: string[]): string[] {
   const result: string[] = [];
+  const optionsWithValues = new Set(["--fail-on", "--output"]);
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -182,7 +197,7 @@ function stripOptions(args: string[]): string[] {
       continue;
     }
 
-    if (arg === "--fail-on") {
+    if (optionsWithValues.has(arg)) {
       index += 1;
       continue;
     }
@@ -340,6 +355,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
     console.log("Usage:");
     console.log("  nohardtext scan <path>");
     console.log("  nohardtext scan <path> --json");
+    console.log("  nohardtext scan <path> --json --output nohardtext-report.json");
     console.log("  nohardtext scan <path> --fail-on high");
     console.log("  nohardtext rules");
     return;
@@ -361,11 +377,15 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
       failOn: options.failOn,
     });
 
-    console.log(
-      options.json
-        ? JSON.stringify(output, null, 2)
-        : formatScanOutput(output, options),
-    );
+    const renderedOutput = options.json
+      ? JSON.stringify(output, null, 2)
+      : formatScanOutput(output, options);
+
+    if (options.outputPath) {
+      writeFileSync(options.outputPath, renderedOutput);
+    } else {
+      console.log(renderedOutput);
+    }
 
     if (!output.ci.passed) {
       process.exitCode = 1;
