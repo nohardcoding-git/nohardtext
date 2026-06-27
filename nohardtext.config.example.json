@@ -1,0 +1,15 @@
+{
+  "ignore": [
+    "storybook-static"
+  ],
+  "failOn": "high",
+  "componentTextProps": [
+    "message",
+    "text"
+  ],
+  "rules": {
+    "NHT1001": "high",
+    "NHT1002": "medium",
+    "NHT1003": "off"
+  }
+}
