@@ -43,6 +43,82 @@ describe("@nohardtext/cli", () => {
     }
   });
 
+  it("throws for unknown config fields", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      writeFileSync(
+        join(dir, "nohardtext.config.json"),
+        JSON.stringify({
+          unknownField: true,
+        }),
+      );
+
+      expect(() => loadConfig(dir)).toThrow(
+        'Invalid config field "unknownField": unknown field.',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("throws when ignore is not a string array", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      writeFileSync(
+        join(dir, "nohardtext.config.json"),
+        JSON.stringify({
+          ignore: "dist",
+        }),
+      );
+
+      expect(() => loadConfig(dir)).toThrow(
+        'Invalid config field "ignore": expected string[].',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("throws when componentTextProps is not a string array", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      writeFileSync(
+        join(dir, "nohardtext.config.json"),
+        JSON.stringify({
+          componentTextProps: ["message", 123],
+        }),
+      );
+
+      expect(() => loadConfig(dir)).toThrow(
+        'Invalid config field "componentTextProps": expected string[].',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("throws for invalid config failOn severity", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      writeFileSync(
+        join(dir, "nohardtext.config.json"),
+        JSON.stringify({
+          failOn: "blocker",
+        }),
+      );
+
+      expect(() => loadConfig(dir)).toThrow(
+        'Invalid config field "failOn": expected one of info, low, medium, high, critical.',
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("skips generated and dependency directories", () => {
     expect(shouldSkipDirectory("node_modules")).toBe(true);
     expect(shouldSkipDirectory("dist")).toBe(true);

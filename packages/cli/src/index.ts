@@ -29,6 +29,12 @@ const SEVERITY_ORDER: Severity[] = [
   "critical",
 ];
 
+const ALLOWED_CONFIG_KEYS = new Set([
+  "ignore",
+  "failOn",
+  "componentTextProps",
+]);
+
 export interface NoHardTextConfig {
   ignore?: string[];
   failOn?: Severity;
@@ -74,18 +80,47 @@ function normalizeFailOn(value: unknown): Severity | undefined {
     typeof value !== "string" ||
     !SEVERITY_ORDER.includes(value as Severity)
   ) {
-    throw new Error(`Invalid failOn severity in config: ${String(value)}`);
+    throw new Error(
+      `Invalid config field "failOn": expected one of ${SEVERITY_ORDER.join(", ")}.`,
+    );
   }
 
   return value as Severity;
 }
 
-function normalizeStringArray(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) {
+function normalizeStringArrayField(
+  fieldName: string,
+  value: unknown,
+): string[] | undefined {
+  if (value === undefined) {
     return undefined;
   }
 
-  return value.filter((item: unknown): item is string => typeof item === "string");
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid config field "${fieldName}": expected string[].`);
+  }
+
+  if (value.some((item) => typeof item !== "string")) {
+    throw new Error(`Invalid config field "${fieldName}": expected string[].`);
+  }
+
+  return value as string[];
+}
+
+function assertConfigObject(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Invalid config file: expected a JSON object.");
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function validateKnownConfigFields(config: Record<string, unknown>): void {
+  for (const key of Object.keys(config)) {
+    if (!ALLOWED_CONFIG_KEYS.has(key)) {
+      throw new Error(`Invalid config field "${key}": unknown field.`);
+    }
+  }
 }
 
 export function loadConfig(cwd = process.cwd()): NoHardTextConfig {
@@ -95,16 +130,19 @@ export function loadConfig(cwd = process.cwd()): NoHardTextConfig {
     return {};
   }
 
-  const parsed = JSON.parse(readFileSync(configPath, "utf8")) as {
-    ignore?: unknown;
-    failOn?: unknown;
-    componentTextProps?: unknown;
-  };
+  const parsed = assertConfigObject(
+    JSON.parse(readFileSync(configPath, "utf8")),
+  );
+
+  validateKnownConfigFields(parsed);
 
   return {
-    ignore: normalizeStringArray(parsed.ignore),
+    ignore: normalizeStringArrayField("ignore", parsed.ignore),
     failOn: normalizeFailOn(parsed.failOn),
-    componentTextProps: normalizeStringArray(parsed.componentTextProps),
+    componentTextProps: normalizeStringArrayField(
+      "componentTextProps",
+      parsed.componentTextProps,
+    ),
   };
 }
 

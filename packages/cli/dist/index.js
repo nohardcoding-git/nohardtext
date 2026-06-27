@@ -24,6 +24,11 @@ var SEVERITY_ORDER = [
   "high",
   "critical"
 ];
+var ALLOWED_CONFIG_KEYS = /* @__PURE__ */ new Set([
+  "ignore",
+  "failOn",
+  "componentTextProps"
+]);
 function getCliBanner() {
   return "NoHardText CLI";
 }
@@ -32,26 +37,53 @@ function normalizeFailOn(value) {
     return void 0;
   }
   if (typeof value !== "string" || !SEVERITY_ORDER.includes(value)) {
-    throw new Error(`Invalid failOn severity in config: ${String(value)}`);
+    throw new Error(
+      `Invalid config field "failOn": expected one of ${SEVERITY_ORDER.join(", ")}.`
+    );
   }
   return value;
 }
-function normalizeStringArray(value) {
-  if (!Array.isArray(value)) {
+function normalizeStringArrayField(fieldName, value) {
+  if (value === void 0) {
     return void 0;
   }
-  return value.filter((item) => typeof item === "string");
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid config field "${fieldName}": expected string[].`);
+  }
+  if (value.some((item) => typeof item !== "string")) {
+    throw new Error(`Invalid config field "${fieldName}": expected string[].`);
+  }
+  return value;
+}
+function assertConfigObject(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Invalid config file: expected a JSON object.");
+  }
+  return value;
+}
+function validateKnownConfigFields(config) {
+  for (const key of Object.keys(config)) {
+    if (!ALLOWED_CONFIG_KEYS.has(key)) {
+      throw new Error(`Invalid config field "${key}": unknown field.`);
+    }
+  }
 }
 function loadConfig(cwd = process.cwd()) {
   const configPath = join(cwd, "nohardtext.config.json");
   if (!existsSync(configPath)) {
     return {};
   }
-  const parsed = JSON.parse(readFileSync(configPath, "utf8"));
+  const parsed = assertConfigObject(
+    JSON.parse(readFileSync(configPath, "utf8"))
+  );
+  validateKnownConfigFields(parsed);
   return {
-    ignore: normalizeStringArray(parsed.ignore),
+    ignore: normalizeStringArrayField("ignore", parsed.ignore),
     failOn: normalizeFailOn(parsed.failOn),
-    componentTextProps: normalizeStringArray(parsed.componentTextProps)
+    componentTextProps: normalizeStringArrayField(
+      "componentTextProps",
+      parsed.componentTextProps
+    )
   };
 }
 function getIgnoredDirectories(config = {}) {
