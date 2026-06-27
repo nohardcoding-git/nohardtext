@@ -1,0 +1,49 @@
+name: NoHardText
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  scan:
+    name: Scan hardcoded UI strings
+    runs-on: ubuntu-latest
+
+    env:
+      NOHARDTEXT_SCAN_PATH: packages
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build NoHardText
+        run: pnpm build
+
+      - name: Run NoHardText scan
+        shell: bash
+        run: |
+          set -o pipefail
+          node packages/cli/dist/index.js scan "$NOHARDTEXT_SCAN_PATH" \
+            --github-annotations \
+            --fail-on high | tee nohardtext-annotations.txt
+
+      - name: Upload NoHardText annotations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nohardtext-annotations
+          path: nohardtext-annotations.txt
