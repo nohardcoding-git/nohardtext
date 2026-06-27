@@ -8,6 +8,32 @@ function parseSource(source) {
     plugins: ["typescript", "jsx"]
   });
 }
+function getJsxElementName(nameNode) {
+  if (!nameNode) {
+    return void 0;
+  }
+  if (nameNode.type === "JSXIdentifier") {
+    return nameNode.name;
+  }
+  if (nameNode.type === "JSXMemberExpression") {
+    const objectName = getJsxElementName(nameNode.object);
+    const propertyName = getJsxElementName(nameNode.property);
+    return [objectName, propertyName].filter(Boolean).join(".") || void 0;
+  }
+  if (nameNode.type === "JSXNamespacedName") {
+    const namespace = getJsxElementName(nameNode.namespace);
+    const name = getJsxElementName(nameNode.name);
+    return [namespace, name].filter(Boolean).join(":") || void 0;
+  }
+  return void 0;
+}
+function getAttributeElementName(path) {
+  const parent = path.parent;
+  if (parent?.type !== "JSXOpeningElement") {
+    return void 0;
+  }
+  return getJsxElementName(parent.name);
+}
 function collectJsxTextNodes(source) {
   const ast = parseSource(source);
   const results = [];
@@ -42,6 +68,7 @@ function collectJsxAttributeStringValues(source, attributeNames) {
       results.push({
         name,
         value,
+        elementName: getAttributeElementName(path),
         startLine: valueNode.loc.start.line,
         startColumn: valueNode.loc.start.column + 1,
         endLine: valueNode.loc.end.line,

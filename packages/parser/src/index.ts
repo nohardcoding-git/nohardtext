@@ -22,6 +22,7 @@ export interface JsxTextNode {
 export interface JsxAttributeStringNode {
   name: string;
   value: string;
+  elementName?: string;
   startLine: number;
   startColumn: number;
   endLine: number;
@@ -33,6 +34,42 @@ export function parseSource(source: string): File {
     sourceType: "module",
     plugins: ["typescript", "jsx"]
   });
+}
+
+function getJsxElementName(nameNode: any): string | undefined {
+  if (!nameNode) {
+    return undefined;
+  }
+
+  if (nameNode.type === "JSXIdentifier") {
+    return nameNode.name;
+  }
+
+  if (nameNode.type === "JSXMemberExpression") {
+    const objectName = getJsxElementName(nameNode.object);
+    const propertyName = getJsxElementName(nameNode.property);
+
+    return [objectName, propertyName].filter(Boolean).join(".") || undefined;
+  }
+
+  if (nameNode.type === "JSXNamespacedName") {
+    const namespace = getJsxElementName(nameNode.namespace);
+    const name = getJsxElementName(nameNode.name);
+
+    return [namespace, name].filter(Boolean).join(":") || undefined;
+  }
+
+  return undefined;
+}
+
+function getAttributeElementName(path: NodePath<JSXAttribute>): string | undefined {
+  const parent = path.parent as any;
+
+  if (parent?.type !== "JSXOpeningElement") {
+    return undefined;
+  }
+
+  return getJsxElementName(parent.name);
 }
 
 export function collectJsxTextNodes(source: string): JsxTextNode[] {
@@ -86,6 +123,7 @@ export function collectJsxAttributeStringValues(
       results.push({
         name,
         value,
+        elementName: getAttributeElementName(path),
         startLine: valueNode.loc.start.line,
         startColumn: valueNode.loc.start.column + 1,
         endLine: valueNode.loc.end.line,

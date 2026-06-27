@@ -10,6 +10,15 @@ export interface AttributeRuleConfig {
   suggestion: string;
   category?: Category;
   severity?: Severity;
+  customComponentsOnly?: boolean;
+}
+
+function isCustomComponentElement(elementName: string | undefined): boolean {
+  if (!elementName) {
+    return false;
+  }
+
+  return /^[A-Z]/.test(elementName);
 }
 
 export function detectStringAttribute(
@@ -17,8 +26,11 @@ export function detectStringAttribute(
   sourceText: string,
   config: AttributeRuleConfig
 ): Finding[] {
-  return collectJsxAttributeStringValues(sourceText, [config.attributeName])
-    .filter((node) => isProbablyLocalizableText(node.value))
+    return collectJsxAttributeStringValues(sourceText, [config.attributeName])
+      .filter((node) => isProbablyLocalizableText(node.value))
+      .filter((node) =>
+        config.customComponentsOnly ? isCustomComponentElement(node.elementName) : true
+      )
     .map((node, index) => ({
       id: `${filePath}:${config.ruleId}:${node.startLine}:${node.startColumn}:${index}`,
       ruleId: config.ruleId,

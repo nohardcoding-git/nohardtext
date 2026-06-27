@@ -33,8 +33,16 @@ function isProbablyLocalizableText(value) {
 }
 
 // src/rules/string-attribute.ts
+function isCustomComponentElement(elementName) {
+  if (!elementName) {
+    return false;
+  }
+  return /^[A-Z]/.test(elementName);
+}
 function detectStringAttribute(filePath, sourceText, config) {
-  return collectJsxAttributeStringValues(sourceText, [config.attributeName]).filter((node) => isProbablyLocalizableText(node.value)).map((node, index) => ({
+  return collectJsxAttributeStringValues(sourceText, [config.attributeName]).filter((node) => isProbablyLocalizableText(node.value)).filter(
+    (node) => config.customComponentsOnly ? isCustomComponentElement(node.elementName) : true
+  ).map((node, index) => ({
     id: `${filePath}:${config.ruleId}:${node.startLine}:${node.startColumn}:${index}`,
     ruleId: config.ruleId,
     severity: config.severity ?? "high",
@@ -171,7 +179,8 @@ function detectCustomComponentPropText(filePath, sourceText) {
       explanation: "User-facing component prop text should be moved to localization files.",
       suggestion: "Move this component prop text to a localization key.",
       category: "localization",
-      severity: "high"
+      severity: "high",
+      customComponentsOnly: true
     })
   );
 }

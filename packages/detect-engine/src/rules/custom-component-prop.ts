@@ -26,7 +26,8 @@ export function detectCustomComponentPropText(
       explanation: "User-facing component prop text should be moved to localization files.",
       suggestion: "Move this component prop text to a localization key.",
       category: "localization",
-      severity: "high"
+      severity: "high",
+      customComponentsOnly: true
     })
   );
 }

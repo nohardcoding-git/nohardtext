@@ -10,6 +10,7 @@ interface JsxTextNode {
 interface JsxAttributeStringNode {
     name: string;
     value: string;
+    elementName?: string;
     startLine: number;
     startColumn: number;
     endLine: number;
