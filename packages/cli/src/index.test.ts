@@ -25,11 +25,11 @@ describe("@nohardtext/cli", () => {
   });
 
   it("returns the CLI version", () => {
-    expect(getCliVersion()).toBe("0.0.0");
+    expect(getCliVersion()).toBe("0.1.0-rc.1");
   });
 
   it("formats version output", () => {
-    expect(formatVersionOutput()).toBe("NoHardText 0.0.0");
+    expect(formatVersionOutput()).toBe("NoHardText 0.1.0-rc.1");
   });
 
   it("formats help output", () => {
@@ -197,7 +197,7 @@ describe("@nohardtext/cli", () => {
     expect(Number.isNaN(Date.parse(parsed.generatedAt))).toBe(false);
     expect(parsed.tool).toEqual({
       name: "NoHardText",
-      version: "0.0.0",
+      version: "0.1.0-rc.1",
     });
 
     expect(parsed.ci).toEqual({

@@ -7,7 +7,7 @@ import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import {
   createReportSummary
 } from "@nohardtext/report-engine";
-var TOOL_VERSION = "0.0.0";
+var TOOL_VERSION = "0.1.0-rc.1";
 var SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 var DEFAULT_IGNORED_DIRECTORIES = [
   "node_modules",
