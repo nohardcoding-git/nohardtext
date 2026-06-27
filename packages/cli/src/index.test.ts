@@ -246,6 +246,36 @@ describe("@nohardtext/cli", () => {
     }
   });
 
+  it("writes scan output to a nested output file", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      const sourcePath = join(dir, "App.tsx");
+      const outputPath = join(dir, "reports", "nohardtext", "report.json");
+
+      writeFileSync(
+        sourcePath,
+        `
+          export default function App() {
+            return <button>Save</button>;
+          }
+        `,
+      );
+
+      await runCli(["scan", sourcePath, "--json", "--output", outputPath]);
+
+      expect(existsSync(outputPath)).toBe(true);
+
+      const parsed = JSON.parse(readFileSync(outputPath, "utf8"));
+
+      expect(parsed.schemaVersion).toBe("1.0");
+      expect(parsed.scannedFiles).toBe(1);
+      expect(parsed.findings.length).toBeGreaterThan(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("writes GitHub annotation output to a file", async () => {
     const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
 

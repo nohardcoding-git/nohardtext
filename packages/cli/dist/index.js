@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // src/index.ts
-import { existsSync, readFileSync, statSync, readdirSync, writeFileSync } from "fs";
-import { join, relative } from "path";
+import { existsSync, mkdirSync, readFileSync, statSync, readdirSync, writeFileSync } from "fs";
+import { dirname, join, relative } from "path";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import {
   createReportSummary
@@ -297,6 +297,13 @@ function runScan(targetPath, cwd = process.cwd(), options = { json: false }, con
 function runScanJson(targetPath, cwd = process.cwd(), config = {}, options = {}) {
   return JSON.stringify(createScanOutput(targetPath, cwd, config, options), null, 2);
 }
+function writeOutputFile(outputPath, content) {
+  const outputDirectory = dirname(outputPath);
+  if (outputDirectory && outputDirectory !== ".") {
+    mkdirSync(outputDirectory, { recursive: true });
+  }
+  writeFileSync(outputPath, content);
+}
 async function runCli(args = process.argv.slice(2)) {
   const parsedOptions = parseOptions(args);
   const normalizedArgs = stripOptions(args);
@@ -326,7 +333,7 @@ async function runCli(args = process.argv.slice(2)) {
     });
     const renderedOutput = options.githubAnnotations ? formatGithubAnnotationOutput(output) : options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options);
     if (options.outputPath) {
-      writeFileSync(options.outputPath, renderedOutput);
+      writeOutputFile(options.outputPath, renderedOutput);
     } else {
       console.log(renderedOutput);
     }

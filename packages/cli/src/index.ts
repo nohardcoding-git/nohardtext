@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, statSync, readdirSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, mkdirSync, readFileSync, statSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import type { Finding, Severity } from "@nohardtext/domain";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
 import {
@@ -445,6 +445,16 @@ export function runScanJson(
   return JSON.stringify(createScanOutput(targetPath, cwd, config, options), null, 2);
 }
 
+function writeOutputFile(outputPath: string, content: string): void {
+  const outputDirectory = dirname(outputPath);
+
+  if (outputDirectory && outputDirectory !== ".") {
+    mkdirSync(outputDirectory, { recursive: true });
+  }
+
+  writeFileSync(outputPath, content);
+}
+
 export async function runCli(args = process.argv.slice(2)): Promise<void> {
   const parsedOptions = parseOptions(args);
   const normalizedArgs = stripOptions(args);
@@ -485,7 +495,7 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
         : formatScanOutput(output, options);
 
     if (options.outputPath) {
-      writeFileSync(options.outputPath, renderedOutput);
+      writeOutputFile(options.outputPath, renderedOutput);
     } else {
       console.log(renderedOutput);
     }
