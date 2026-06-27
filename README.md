@@ -22,6 +22,7 @@ Current focus:
 - JSON reports
 - CI failure threshold
 - Lightweight config support
+- Real-world React detection
 
 ---
 
@@ -41,12 +42,13 @@ It helps answer:
 
 | Rule ID | Rule | Category | Severity | Description |
 |---|---|---|---|---|
-| NHT1001 | JSX Text | localization | high | Detects hardcoded JSX text |
-| NHT1002 | Placeholder Attribute | localization | high | Detects hardcoded placeholder values |
-| NHT1003 | Title Attribute | localization | high | Detects hardcoded title values |
-| NHT1004 | ARIA Label | accessibility | high | Detects hardcoded aria-label values |
+| NHT1001 | JSX Text | localization | high | Detects hardcoded user-facing text inside JSX nodes |
+| NHT1002 | Placeholder Attribute | localization | high | Detects hardcoded placeholder attribute values |
+| NHT1003 | Title Attribute | localization | high | Detects hardcoded title attribute values |
+| NHT1004 | ARIA Label | accessibility | high | Detects hardcoded aria-label attribute values |
 | NHT1005 | Alt Attribute | accessibility | high | Detects hardcoded image alt text |
-| NHT1006 | Component Text Prop | Detects hardcoded text passed through common component props |
+| NHT1006 | Component Text Prop | localization | high | Detects hardcoded text passed through common custom component props |
+
 ---
 
 ## CLI Demo
@@ -108,6 +110,8 @@ Example:
 node packages/cli/dist/index.js scan src --fail-on critical
 ```
 
+CLI flags take priority over config.
+
 ---
 
 ## List Supported Rules
@@ -139,7 +143,11 @@ Example:
     "build",
     "out"
   ],
-  "failOn": "high"
+  "failOn": "high",
+  "componentTextProps": [
+    "message",
+    "text"
+  ]
 }
 ```
 
@@ -147,7 +155,16 @@ Example:
 
 `failOn` controls CI failure threshold.
 
-CLI flags take priority over config.
+`componentTextProps` adds extra custom component prop names that should be checked for hardcoded user-facing text.
+
+Example:
+
+```tsx
+<Toast message="Saved successfully" />
+<Badge text="New" />
+```
+
+These props are checked only on custom components, not native HTML elements.
 
 See:
 
@@ -216,7 +233,7 @@ packages/
 Sprint 0 — Foundation: Done  
 Sprint 1 — Hello World Scan: Done  
 Sprint 2 — Rule System Cleanup: Done  
-Sprint 3 — Real-world Detection: Next
+Sprint 3 — Real-world Detection: In progress
 
 ---
 
