@@ -2,30 +2,31 @@
 import { parse } from "@babel/parser";
 import traverseModule from "@babel/traverse";
 var traverse = traverseModule.default ?? traverseModule;
+var IGNORED_JSX_TEXT_ELEMENTS = /* @__PURE__ */ new Set([
+  "pre",
+  "code",
+  "kbd",
+  "samp"
+]);
+function getJsxElementName(nameNode) {
+  if (!nameNode || nameNode.type !== "JSXIdentifier") {
+    return void 0;
+  }
+  return nameNode.name;
+}
+function isInsideIgnoredJsxTextElement(path) {
+  const parentElementPath = path.findParent(
+    (parentPath) => parentPath.isJSXElement()
+  );
+  const openingElement = parentElementPath?.node?.openingElement;
+  const elementName = getJsxElementName(openingElement?.name);
+  return elementName ? IGNORED_JSX_TEXT_ELEMENTS.has(elementName) : false;
+}
 function parseSource(source) {
   return parse(source, {
     sourceType: "module",
     plugins: ["typescript", "jsx"]
   });
-}
-function getJsxElementName(nameNode) {
-  if (!nameNode) {
-    return void 0;
-  }
-  if (nameNode.type === "JSXIdentifier") {
-    return nameNode.name;
-  }
-  if (nameNode.type === "JSXMemberExpression") {
-    const objectName = getJsxElementName(nameNode.object);
-    const propertyName = getJsxElementName(nameNode.property);
-    return [objectName, propertyName].filter(Boolean).join(".") || void 0;
-  }
-  if (nameNode.type === "JSXNamespacedName") {
-    const namespace = getJsxElementName(nameNode.namespace);
-    const name = getJsxElementName(nameNode.name);
-    return [namespace, name].filter(Boolean).join(":") || void 0;
-  }
-  return void 0;
 }
 function getAttributeElementName(path) {
   const parent = path.parent;
@@ -40,6 +41,7 @@ function collectJsxTextNodes(source) {
   traverse(ast, {
     JSXText(path) {
       const text = path.node.value.trim();
+      if (isInsideIgnoredJsxTextElement(path)) return;
       if (!text || !path.node.loc) return;
       results.push({
         text,

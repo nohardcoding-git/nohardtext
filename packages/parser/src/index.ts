@@ -9,6 +9,32 @@ type TraverseFn = (parent: File, opts: TraverseOptions) => void;
 const traverse = ((traverseModule as unknown as { default?: TraverseFn })
   .default ?? traverseModule) as unknown as TraverseFn;
 
+const IGNORED_JSX_TEXT_ELEMENTS = new Set([
+  "pre",
+  "code",
+  "kbd",
+  "samp"
+]);
+
+function getJsxElementName(nameNode: any): string | undefined {
+  if (!nameNode || nameNode.type !== "JSXIdentifier") {
+    return undefined;
+  }
+
+  return nameNode.name;
+}
+
+function isInsideIgnoredJsxTextElement(path: NodePath<JSXText>): boolean {
+  const parentElementPath = path.findParent((parentPath) =>
+    parentPath.isJSXElement()
+  );
+
+  const openingElement = (parentElementPath?.node as any)?.openingElement;
+  const elementName = getJsxElementName(openingElement?.name);
+
+  return elementName ? IGNORED_JSX_TEXT_ELEMENTS.has(elementName) : false;
+}
+
 export interface JsxTextNode {
   text: string;
   startLine: number;
@@ -34,32 +60,6 @@ export function parseSource(source: string): File {
   });
 }
 
-function getJsxElementName(nameNode: any): string | undefined {
-  if (!nameNode) {
-    return undefined;
-  }
-
-  if (nameNode.type === "JSXIdentifier") {
-    return nameNode.name;
-  }
-
-  if (nameNode.type === "JSXMemberExpression") {
-    const objectName = getJsxElementName(nameNode.object);
-    const propertyName = getJsxElementName(nameNode.property);
-
-    return [objectName, propertyName].filter(Boolean).join(".") || undefined;
-  }
-
-  if (nameNode.type === "JSXNamespacedName") {
-    const namespace = getJsxElementName(nameNode.namespace);
-    const name = getJsxElementName(nameNode.name);
-
-    return [namespace, name].filter(Boolean).join(":") || undefined;
-  }
-
-  return undefined;
-}
-
 function getAttributeElementName(
   path: NodePath<JSXAttribute>,
 ): string | undefined {
@@ -79,6 +79,8 @@ export function collectJsxTextNodes(source: string): JsxTextNode[] {
   traverse(ast, {
     JSXText(path: NodePath<JSXText>) {
       const text = path.node.value.trim();
+
+      if (isInsideIgnoredJsxTextElement(path)) return;
 
       if (!text || !path.node.loc) return;
 

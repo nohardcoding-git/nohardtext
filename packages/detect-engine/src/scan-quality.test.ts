@@ -131,4 +131,70 @@ describe("@nohardtext/detect-engine scan quality", () => {
       'Hardcoded JSX text found: "Something went wrong"',
     ]);
   });
+  it("does not flag code-like content in developer/documentation elements", () => {
+    const findings = scan(`
+      export default function App() {
+        return (
+          <article>
+            <pre>npm install -D @nohardcoding/nohardtext</pre>
+            <code>npx nohardtext scan src</code>
+            <kbd>Ctrl</kbd>
+            <kbd>K</kbd>
+            <samp>Findings: 0</samp>
+          </article>
+        );
+      }
+    `);
+
+    expect(findings).toEqual([]);
+  });
+
+  it("does not flag non-localizable symbol and numeric tokens", () => {
+    const findings = scan(`
+      export default function App() {
+        return (
+          <>
+            <span>404</span>
+            <span>500</span>
+            <span>100%</span>
+            <span>v1.2.3</span>
+            <span>?</span>
+            <span>�</span>
+            <span>+</span>
+            <span>-</span>
+            <span>/</span>
+            <span>...</span>
+          </>
+        );
+      }
+    `);
+
+    expect(findings).toEqual([]);
+  });
+
+  it("still detects real user-facing text near ignored technical tokens", () => {
+    const findings = scan(`
+      export default function App() {
+        return (
+          <>
+            <span>404</span>
+            <h1>Page not found</h1>
+            <code>npm install</code>
+            <p>Try searching for another page</p>
+          </>
+        );
+      }
+    `);
+
+    expect(findings.map((finding) => finding.ruleId)).toEqual([
+      "NHT1001",
+      "NHT1001",
+    ]);
+
+    expect(findings.map((finding) => finding.message)).toEqual([
+      'Hardcoded JSX text found: "Page not found"',
+      'Hardcoded JSX text found: "Try searching for another page"',
+    ]);
+  });
+
 });
