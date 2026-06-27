@@ -4,7 +4,9 @@
 import { existsSync, readFileSync, statSync, readdirSync } from "fs";
 import { join, relative } from "path";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
-import { createReportSummary } from "@nohardtext/report-engine";
+import {
+  createReportSummary
+} from "@nohardtext/report-engine";
 var SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 var DEFAULT_IGNORED_DIRECTORIES = [
   "node_modules",
@@ -15,7 +17,13 @@ var DEFAULT_IGNORED_DIRECTORIES = [
   "build",
   "out"
 ];
-var SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"];
+var SEVERITY_ORDER = [
+  "info",
+  "low",
+  "medium",
+  "high",
+  "critical"
+];
 function getCliBanner() {
   return "NoHardText CLI";
 }
@@ -28,6 +36,12 @@ function normalizeFailOn(value) {
   }
   return value;
 }
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) {
+    return void 0;
+  }
+  return value.filter((item) => typeof item === "string");
+}
 function loadConfig(cwd = process.cwd()) {
   const configPath = join(cwd, "nohardtext.config.json");
   if (!existsSync(configPath)) {
@@ -35,15 +49,13 @@ function loadConfig(cwd = process.cwd()) {
   }
   const parsed = JSON.parse(readFileSync(configPath, "utf8"));
   return {
-    ignore: Array.isArray(parsed.ignore) ? parsed.ignore.filter((item) => typeof item === "string") : void 0,
-    failOn: normalizeFailOn(parsed.failOn)
+    ignore: normalizeStringArray(parsed.ignore),
+    failOn: normalizeFailOn(parsed.failOn),
+    componentTextProps: normalizeStringArray(parsed.componentTextProps)
   };
 }
 function getIgnoredDirectories(config = {}) {
-  return /* @__PURE__ */ new Set([
-    ...DEFAULT_IGNORED_DIRECTORIES,
-    ...config.ignore ?? []
-  ]);
+  return /* @__PURE__ */ new Set([...DEFAULT_IGNORED_DIRECTORIES, ...config.ignore ?? []]);
 }
 function shouldSkipDirectory(directoryName, ignoredDirectories = getIgnoredDirectories()) {
   return ignoredDirectories.has(directoryName);
@@ -105,16 +117,13 @@ function shouldFail(findings, failOn) {
     return false;
   }
   const threshold = SEVERITY_ORDER.indexOf(failOn);
-  return findings.some((finding) => SEVERITY_ORDER.indexOf(finding.severity) >= threshold);
+  return findings.some(
+    (finding) => SEVERITY_ORDER.indexOf(finding.severity) >= threshold
+  );
 }
 function runRulesList() {
   const rules = getBuiltInRuleMetadata();
-  const lines = [
-    getCliBanner(),
-    "",
-    "Supported rules:",
-    ""
-  ];
+  const lines = [getCliBanner(), "", "Supported rules:", ""];
   for (const rule of rules) {
     lines.push(`${rule.id}  ${rule.name}`);
     lines.push(`  Category: ${rule.category}`);
@@ -132,7 +141,10 @@ function createScanOutput(targetPath, cwd = process.cwd(), config = {}) {
     const sourceText = readFileSync(filePath, "utf8");
     return detect({
       filePath: relative(cwd, filePath),
-      sourceText
+      sourceText,
+      options: {
+        componentTextProps: config.componentTextProps
+      }
     }).findings;
   });
   return {
@@ -159,14 +171,18 @@ function formatScanOutput(output, options = { json: false }) {
   ];
   if (options.failOn) {
     lines.push(`Fail on: ${options.failOn}`);
-    lines.push(`CI result: ${shouldFail(output.findings, options.failOn) ? "failed" : "passed"}`);
+    lines.push(
+      `CI result: ${shouldFail(output.findings, options.failOn) ? "failed" : "passed"}`
+    );
     lines.push("");
   }
   for (const finding of output.findings) {
     const metadata = ruleMetadata.get(finding.ruleId);
     lines.push("----------------------------");
     lines.push(`${finding.ruleId}${metadata ? ` - ${metadata.name}` : ""}`);
-    lines.push(`${finding.location.filePath}:${finding.location.startLine}:${finding.location.startColumn}`);
+    lines.push(
+      `${finding.location.filePath}:${finding.location.startLine}:${finding.location.startColumn}`
+    );
     lines.push(`Severity: ${finding.severity}`);
     lines.push(`Category: ${finding.category}`);
     lines.push(finding.message);
@@ -204,7 +220,9 @@ async function runCli(args = process.argv.slice(2)) {
       failOn: parsedOptions.failOn ?? config.failOn
     };
     const output = createScanOutput(target, process.cwd(), config);
-    console.log(options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options));
+    console.log(
+      options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options)
+    );
     if (shouldFail(output.findings, options.failOn)) {
       process.exitCode = 1;
     }

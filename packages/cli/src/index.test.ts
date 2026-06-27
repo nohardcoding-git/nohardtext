@@ -10,7 +10,7 @@ import {
   runScan,
   runScanJson,
   shouldFail,
-  shouldSkipDirectory
+  shouldSkipDirectory,
 } from "./index";
 import type { Finding } from "@nohardtext/domain";
 
@@ -27,14 +27,16 @@ describe("@nohardtext/cli", () => {
         join(dir, "nohardtext.config.json"),
         JSON.stringify({
           ignore: ["storybook-static"],
-          failOn: "high"
-        })
+          failOn: "high",
+          componentTextProps: ["message", "text"],
+        }),
       );
 
       const config = loadConfig(dir);
 
       expect(config.ignore).toEqual(["storybook-static"]);
       expect(config.failOn).toBe("high");
+      expect(config.componentTextProps).toEqual(["message", "text"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -49,10 +51,12 @@ describe("@nohardtext/cli", () => {
 
   it("supports custom ignored directories from config", () => {
     const ignoredDirectories = getIgnoredDirectories({
-      ignore: ["storybook-static"]
+      ignore: ["storybook-static"],
     });
 
-    expect(shouldSkipDirectory("storybook-static", ignoredDirectories)).toBe(true);
+    expect(shouldSkipDirectory("storybook-static", ignoredDirectories)).toBe(
+      true,
+    );
     expect(shouldSkipDirectory("src", ignoredDirectories)).toBe(false);
   });
 
@@ -86,12 +90,48 @@ describe("@nohardtext/cli", () => {
   it("detects CI failure threshold", () => {
     const findings = [
       {
-        severity: "high"
-      }
+        severity: "high",
+      },
     ] as Finding[];
 
     expect(shouldFail(findings, "critical")).toBe(false);
     expect(shouldFail(findings, "high")).toBe(true);
     expect(shouldFail(findings, "medium")).toBe(true);
+  });
+
+  it("uses component text props from config", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      writeFileSync(
+        join(dir, "App.tsx"),
+        `
+        export default function App() {
+          return (
+            <>
+              <Toast message="Saved successfully" />
+              <Badge text="New" />
+            </>
+          );
+        }
+      `,
+      );
+
+      const output = runScan(
+        join(dir, "App.tsx"),
+        dir,
+        { json: false },
+        {
+          componentTextProps: ["message", "text"],
+        },
+      );
+
+      expect(output).toContain(
+        'Hardcoded component prop "message" found: "Saved successfully"',
+      );
+      expect(output).toContain('Hardcoded component prop "text" found: "New"');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

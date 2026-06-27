@@ -5,6 +5,7 @@ import { ReportSummary } from '@nohardtext/report-engine';
 interface NoHardTextConfig {
     ignore?: string[];
     failOn?: Severity;
+    componentTextProps?: string[];
 }
 interface ScanOutput {
     scannedFiles: number;

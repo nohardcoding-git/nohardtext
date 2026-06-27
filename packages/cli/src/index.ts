@@ -4,7 +4,10 @@ import { existsSync, readFileSync, statSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Finding, Severity } from "@nohardtext/domain";
 import { detect, getBuiltInRuleMetadata } from "@nohardtext/detect-engine";
-import { createReportSummary, type ReportSummary } from "@nohardtext/report-engine";
+import {
+  createReportSummary,
+  type ReportSummary,
+} from "@nohardtext/report-engine";
 
 const SUPPORTED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
@@ -15,14 +18,21 @@ const DEFAULT_IGNORED_DIRECTORIES = [
   ".git",
   ".next",
   "build",
-  "out"
+  "out",
 ];
 
-const SEVERITY_ORDER: Severity[] = ["info", "low", "medium", "high", "critical"];
+const SEVERITY_ORDER: Severity[] = [
+  "info",
+  "low",
+  "medium",
+  "high",
+  "critical",
+];
 
 export interface NoHardTextConfig {
   ignore?: string[];
   failOn?: Severity;
+  componentTextProps?: string[];
 }
 
 export interface ScanOutput {
@@ -45,11 +55,22 @@ function normalizeFailOn(value: unknown): Severity | undefined {
     return undefined;
   }
 
-  if (typeof value !== "string" || !SEVERITY_ORDER.includes(value as Severity)) {
+  if (
+    typeof value !== "string" ||
+    !SEVERITY_ORDER.includes(value as Severity)
+  ) {
     throw new Error(`Invalid failOn severity in config: ${String(value)}`);
   }
 
   return value as Severity;
+}
+
+function normalizeStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value.filter((item: unknown): item is string => typeof item === "string");
 }
 
 export function loadConfig(cwd = process.cwd()): NoHardTextConfig {
@@ -62,26 +83,25 @@ export function loadConfig(cwd = process.cwd()): NoHardTextConfig {
   const parsed = JSON.parse(readFileSync(configPath, "utf8")) as {
     ignore?: unknown;
     failOn?: unknown;
+    componentTextProps?: unknown;
   };
 
   return {
-    ignore: Array.isArray(parsed.ignore)
-      ? parsed.ignore.filter((item): item is string => typeof item === "string")
-      : undefined,
-    failOn: normalizeFailOn(parsed.failOn)
+    ignore: normalizeStringArray(parsed.ignore),
+    failOn: normalizeFailOn(parsed.failOn),
+    componentTextProps: normalizeStringArray(parsed.componentTextProps),
   };
 }
 
-export function getIgnoredDirectories(config: NoHardTextConfig = {}): Set<string> {
-  return new Set([
-    ...DEFAULT_IGNORED_DIRECTORIES,
-    ...(config.ignore ?? [])
-  ]);
+export function getIgnoredDirectories(
+  config: NoHardTextConfig = {},
+): Set<string> {
+  return new Set([...DEFAULT_IGNORED_DIRECTORIES, ...(config.ignore ?? [])]);
 }
 
 export function shouldSkipDirectory(
   directoryName: string,
-  ignoredDirectories = getIgnoredDirectories()
+  ignoredDirectories = getIgnoredDirectories(),
 ): boolean {
   return ignoredDirectories.has(directoryName);
 }
@@ -90,7 +110,10 @@ function isSupportedFile(filePath: string): boolean {
   return SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension));
 }
 
-function collectFiles(targetPath: string, ignoredDirectories: Set<string>): string[] {
+function collectFiles(
+  targetPath: string,
+  ignoredDirectories: Set<string>,
+): string[] {
   if (!existsSync(targetPath)) {
     throw new Error(`Path does not exist: ${targetPath}`);
   }
@@ -131,7 +154,7 @@ function parseOptions(args: string[]): CliOptions {
 
   return {
     json: args.includes("--json"),
-    failOn: failOnValue as Severity | undefined
+    failOn: failOnValue as Severity | undefined,
   };
 }
 
@@ -163,18 +186,15 @@ export function shouldFail(findings: Finding[], failOn?: Severity): boolean {
 
   const threshold = SEVERITY_ORDER.indexOf(failOn);
 
-  return findings.some((finding) => SEVERITY_ORDER.indexOf(finding.severity) >= threshold);
+  return findings.some(
+    (finding) => SEVERITY_ORDER.indexOf(finding.severity) >= threshold,
+  );
 }
 
 export function runRulesList(): string {
   const rules = getBuiltInRuleMetadata();
 
-  const lines = [
-    getCliBanner(),
-    "",
-    "Supported rules:",
-    ""
-  ];
+  const lines = [getCliBanner(), "", "Supported rules:", ""];
 
   for (const rule of rules) {
     lines.push(`${rule.id}  ${rule.name}`);
@@ -191,7 +211,7 @@ export function runRulesList(): string {
 export function createScanOutput(
   targetPath: string,
   cwd = process.cwd(),
-  config: NoHardTextConfig = {}
+  config: NoHardTextConfig = {},
 ): ScanOutput {
   const ignoredDirectories = getIgnoredDirectories(config);
   const files = collectFiles(targetPath, ignoredDirectories);
@@ -201,20 +221,26 @@ export function createScanOutput(
 
     return detect({
       filePath: relative(cwd, filePath),
-      sourceText
+      sourceText,
+      options: {
+        componentTextProps: config.componentTextProps,
+      },
     }).findings;
   });
 
   return {
     scannedFiles: files.length,
     findings,
-    summary: createReportSummary({ findings })
+    summary: createReportSummary({ findings }),
   };
 }
 
-export function formatScanOutput(output: ScanOutput, options: CliOptions = { json: false }): string {
+export function formatScanOutput(
+  output: ScanOutput,
+  options: CliOptions = { json: false },
+): string {
   const ruleMetadata = new Map(
-    getBuiltInRuleMetadata().map((rule) => [rule.id, rule])
+    getBuiltInRuleMetadata().map((rule) => [rule.id, rule]),
   );
 
   const summary = output.summary;
@@ -228,12 +254,14 @@ export function formatScanOutput(output: ScanOutput, options: CliOptions = { jso
     `Reason: ${summary.shipReason}`,
     `Localization grade: ${summary.healthScore.grade}`,
     `Localization score: ${summary.healthScore.score} / 100`,
-    ""
+    "",
   ];
 
   if (options.failOn) {
     lines.push(`Fail on: ${options.failOn}`);
-    lines.push(`CI result: ${shouldFail(output.findings, options.failOn) ? "failed" : "passed"}`);
+    lines.push(
+      `CI result: ${shouldFail(output.findings, options.failOn) ? "failed" : "passed"}`,
+    );
     lines.push("");
   }
 
@@ -242,7 +270,9 @@ export function formatScanOutput(output: ScanOutput, options: CliOptions = { jso
 
     lines.push("----------------------------");
     lines.push(`${finding.ruleId}${metadata ? ` - ${metadata.name}` : ""}`);
-    lines.push(`${finding.location.filePath}:${finding.location.startLine}:${finding.location.startColumn}`);
+    lines.push(
+      `${finding.location.filePath}:${finding.location.startLine}:${finding.location.startColumn}`,
+    );
     lines.push(`Severity: ${finding.severity}`);
     lines.push(`Category: ${finding.category}`);
     lines.push(finding.message);
@@ -257,7 +287,7 @@ export function runScan(
   targetPath: string,
   cwd = process.cwd(),
   options: CliOptions = { json: false },
-  config: NoHardTextConfig = {}
+  config: NoHardTextConfig = {},
 ): string {
   return formatScanOutput(createScanOutput(targetPath, cwd, config), options);
 }
@@ -265,7 +295,7 @@ export function runScan(
 export function runScanJson(
   targetPath: string,
   cwd = process.cwd(),
-  config: NoHardTextConfig = {}
+  config: NoHardTextConfig = {},
 ): string {
   return JSON.stringify(createScanOutput(targetPath, cwd, config), null, 2);
 }
@@ -294,12 +324,16 @@ export async function runCli(args = process.argv.slice(2)): Promise<void> {
     const config = loadConfig(process.cwd());
     const options: CliOptions = {
       ...parsedOptions,
-      failOn: parsedOptions.failOn ?? config.failOn
+      failOn: parsedOptions.failOn ?? config.failOn,
     };
 
     const output = createScanOutput(target, process.cwd(), config);
 
-    console.log(options.json ? JSON.stringify(output, null, 2) : formatScanOutput(output, options));
+    console.log(
+      options.json
+        ? JSON.stringify(output, null, 2)
+        : formatScanOutput(output, options),
+    );
 
     if (shouldFail(output.findings, options.failOn)) {
       process.exitCode = 1;
