@@ -26,3 +26,9 @@ yarn-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# dependency/cache folders
+node_modules/
+.vite/
+packages/*/node_modules/
+packages/*/node_modules/.vite/
