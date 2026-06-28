@@ -168,7 +168,15 @@ var DEFAULT_COMPONENT_TEXT_PROPS = [
   "submitText",
   "closeText",
   "primaryText",
-  "secondaryText"
+  "secondaryText",
+  "message",
+  "text",
+  "tooltip",
+  "errorMessage",
+  "successMessage",
+  "warningMessage",
+  "loadingText",
+  "emptyMessage"
 ];
 function getComponentTextProps(options = {}) {
   return [.../* @__PURE__ */ new Set([...DEFAULT_COMPONENT_TEXT_PROPS, ...options.propNames ?? []])];

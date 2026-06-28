@@ -11,7 +11,15 @@ const DEFAULT_COMPONENT_TEXT_PROPS = [
   "submitText",
   "closeText",
   "primaryText",
-  "secondaryText"
+  "secondaryText",
+  "message",
+  "text",
+  "tooltip",
+  "errorMessage",
+  "successMessage",
+  "warningMessage",
+  "loadingText",
+  "emptyMessage"
 ];
 
 export interface ComponentTextPropOptions {

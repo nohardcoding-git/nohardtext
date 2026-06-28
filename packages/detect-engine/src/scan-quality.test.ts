@@ -197,4 +197,62 @@ describe("@nohardtext/detect-engine scan quality", () => {
     ]);
   });
 
+  it("detects common real-world custom component text props by default", () => {
+    const findings = scan(`
+      export default function App() {
+        return (
+          <>
+            <Toast message="Saved successfully" />
+            <Tooltip text="Copy link" />
+            <HelpIcon tooltip="This field is required" />
+            <Alert errorMessage="Something went wrong" />
+            <Alert successMessage="Project created" />
+            <Alert warningMessage="This action cannot be undone" />
+            <Loader loadingText="Loading projects..." />
+            <EmptyState emptyMessage="No projects found" />
+          </>
+        );
+      }
+    `);
+
+    expect(findings.map((finding) => finding.ruleId)).toEqual([
+      "NHT1006",
+      "NHT1006",
+      "NHT1006",
+      "NHT1006",
+      "NHT1006",
+      "NHT1006",
+      "NHT1006",
+      "NHT1006",
+    ]);
+
+    expect(findings.map((finding) => finding.message)).toEqual([
+      'Hardcoded component prop "message" found: "Saved successfully"',
+      'Hardcoded component prop "text" found: "Copy link"',
+      'Hardcoded component prop "tooltip" found: "This field is required"',
+      'Hardcoded component prop "errorMessage" found: "Something went wrong"',
+      'Hardcoded component prop "successMessage" found: "Project created"',
+      'Hardcoded component prop "warningMessage" found: "This action cannot be undone"',
+      'Hardcoded component prop "loadingText" found: "Loading projects..."',
+      'Hardcoded component prop "emptyMessage" found: "No projects found"',
+    ]);
+  });
+
+  it("does not flag real-world text-like props on native lowercase elements", () => {
+    const findings = scan(`
+      export default function App() {
+        return (
+          <>
+            <div message="not-user-facing-native-prop" />
+            <span text="not-user-facing-native-prop" />
+            <input errorMessage="not-user-facing-native-prop" />
+            <section loadingText="not-user-facing-native-prop" />
+          </>
+        );
+      }
+    `);
+
+    expect(findings).toEqual([]);
+  });
+
 });
