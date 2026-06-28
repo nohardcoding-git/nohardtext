@@ -176,7 +176,21 @@ var DEFAULT_COMPONENT_TEXT_PROPS = [
   "successMessage",
   "warningMessage",
   "loadingText",
-  "emptyMessage"
+  "emptyMessage",
+  "heading",
+  "subheading",
+  "subtitle",
+  "caption",
+  "badgeText",
+  "buttonText",
+  "linkText",
+  "ariaLabel",
+  "accessibilityLabel",
+  "screenReaderLabel",
+  "emptyTitle",
+  "errorTitle",
+  "successTitle",
+  "warningTitle"
 ];
 function getComponentTextProps(options = {}) {
   return [.../* @__PURE__ */ new Set([...DEFAULT_COMPONENT_TEXT_PROPS, ...options.propNames ?? []])];

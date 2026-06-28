@@ -96,12 +96,7 @@ function getStaticStringFromAttributeValue(valueNode) {
     };
   }
   if (expression.type === "TemplateLiteral") {
-    const quasis = expression.quasis ?? [];
-    const expressions = expression.expressions ?? [];
-    if (expressions.length > 0 || quasis.length !== 1) {
-      return void 0;
-    }
-    const value = (quasis[0]?.value?.cooked ?? quasis[0]?.value?.raw ?? "").trim();
+    const value = getTemplateLiteralDisplayValue(expression);
     if (!value || !expression.loc) {
       return void 0;
     }

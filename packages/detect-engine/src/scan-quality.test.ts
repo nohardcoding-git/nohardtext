@@ -150,24 +150,21 @@ describe("@nohardtext/detect-engine scan quality", () => {
   });
 
   it("does not flag non-localizable symbol and numeric tokens", () => {
-    const findings = scan(`
-      export default function App() {
-        return (
-          <>
-            <span>404</span>
-            <span>500</span>
-            <span>100%</span>
-            <span>v1.2.3</span>
-            <span>?</span>
-            <span>�</span>
-            <span>+</span>
-            <span>-</span>
-            <span>/</span>
-            <span>...</span>
-          </>
-        );
-      }
-    `);
+    const findings = scan([
+      "export default function App() {",
+      "  return (",
+      "    <>",
+      "      <span>404</span>",
+      "      <span>500</span>",
+      "      <span>100%</span>",
+      "      <span>v1.2.3</span>",
+      "      <span>*</span>",
+      "      <span>--</span>",
+      "      <span>...</span>",
+      "    </>",
+      "  );",
+      "}",
+    ].join("\n"));
 
     expect(findings).toEqual([]);
   });
@@ -198,33 +195,24 @@ describe("@nohardtext/detect-engine scan quality", () => {
   });
 
   it("detects common real-world custom component text props by default", () => {
-    const findings = scan(`
-      export default function App() {
-        return (
-          <>
-            <Toast message="Saved successfully" />
-            <Tooltip text="Copy link" />
-            <HelpIcon tooltip="This field is required" />
-            <Alert errorMessage="Something went wrong" />
-            <Alert successMessage="Project created" />
-            <Alert warningMessage="This action cannot be undone" />
-            <Loader loadingText="Loading projects..." />
-            <EmptyState emptyMessage="No projects found" />
-          </>
-        );
-      }
-    `);
+    const findings = scan([
+      "export default function App() {",
+      "  return (",
+      "    <>",
+      "      <Toast message=\"Saved successfully\" />",
+      "      <Tooltip text=\"Copy link\" />",
+      "      <HelpIcon tooltip=\"This field is required\" />",
+      "      <Alert errorMessage=\"Something went wrong\" />",
+      "      <Alert successMessage=\"Project created\" />",
+      "      <Alert warningMessage=\"This action cannot be undone\" />",
+      "      <Loader loadingText=\"Loading projects...\" />",
+      "      <EmptyState emptyMessage=\"No projects found\" />",
+      "    </>",
+      "  );",
+      "}",
+    ].join("\n"));
 
-    expect(findings.map((finding) => finding.ruleId)).toEqual([
-      "NHT1006",
-      "NHT1006",
-      "NHT1006",
-      "NHT1006",
-      "NHT1006",
-      "NHT1006",
-      "NHT1006",
-      "NHT1006",
-    ]);
+    expect(findings.map((finding) => finding.ruleId)).toEqual(Array(8).fill("NHT1006"));
 
     expect(findings.map((finding) => finding.message)).toEqual([
       'Hardcoded component prop "message" found: "Saved successfully"',
@@ -239,43 +227,42 @@ describe("@nohardtext/detect-engine scan quality", () => {
   });
 
   it("does not flag real-world text-like props on native lowercase elements", () => {
-    const findings = scan(`
-      export default function App() {
-        return (
-          <>
-            <div message="not-user-facing-native-prop" />
-            <span text="not-user-facing-native-prop" />
-            <input errorMessage="not-user-facing-native-prop" />
-            <section loadingText="not-user-facing-native-prop" />
-          </>
-        );
-      }
-    `);
+    const findings = scan([
+      "export default function App() {",
+      "  return (",
+      "    <>",
+      "      <div message=\"not-user-facing-native-prop\" />",
+      "      <span text=\"not-user-facing-native-prop\" />",
+      "      <input errorMessage=\"not-user-facing-native-prop\" />",
+      "      <section loadingText=\"not-user-facing-native-prop\" />",
+      "    </>",
+      "  );",
+      "}",
+    ].join("\n"));
 
     expect(findings).toEqual([]);
   });
 
-
   it("detects dynamic template literal UI strings", () => {
-    const findings = scan(`
-      export default function App({
-        userName,
-        entityName,
-        resourceName,
-      }: {
-        userName: string;
-        entityName: string;
-        resourceName: string;
-      }) {
-        return (
-          <>
-            <h1>{`Welcome ${userName}`}</h1>
-            <input placeholder={`Search ${entityName}`} />
-            <Button label={`Create ${resourceName}`} />
-          </>
-        );
-      }
-    `);
+    const findings = scan([
+      "export default function App({",
+      "  userName,",
+      "  entityName,",
+      "  resourceName,",
+      "}: {",
+      "  userName: string;",
+      "  entityName: string;",
+      "  resourceName: string;",
+      "}) {",
+      "  return (",
+      "    <>",
+      "      <h1>{`Welcome ${userName}`}</h1>",
+      "      <input placeholder={`Search ${entityName}`} />",
+      "      <Button label={`Create ${resourceName}`} />",
+      "    </>",
+      "  );",
+      "}",
+    ].join("\n"));
 
     expect(findings.map((finding) => finding.ruleId)).toEqual([
       "NHT1001",
@@ -288,6 +275,66 @@ describe("@nohardtext/detect-engine scan quality", () => {
       'Hardcoded placeholder found: "Search ${...}"',
       'Hardcoded component prop "label" found: "Create ${...}"',
     ]);
+  });
+
+  it("detects common heading and accessibility component props by default", () => {
+    const findings = scan([
+      "export default function App() {",
+      "  return (",
+      "    <>",
+      "      <PageHeader heading=\"Billing settings\" subheading=\"Manage your plan\" />",
+      "      <Card subtitle=\"Current usage\" caption=\"Updated today\" />",
+      "      <Badge badgeText=\"New\" />",
+      "      <CTA buttonText=\"Upgrade now\" linkText=\"View plans\" />",
+      "      <IconButton ariaLabel=\"Close dialog\" />",
+      "      <IconButton accessibilityLabel=\"Open menu\" />",
+      "      <VisuallyHidden screenReaderLabel=\"Loading dashboard\" />",
+      "      <EmptyState emptyTitle=\"No invoices yet\" />",
+      "      <Alert errorTitle=\"Payment failed\" />",
+      "      <Alert successTitle=\"Payment complete\" />",
+      "      <Alert warningTitle=\"Payment method expires soon\" />",
+      "    </>",
+      "  );",
+      "}",
+    ].join("\n"));
+
+    expect(findings.map((finding) => finding.ruleId)).toEqual(Array(14).fill("NHT1006"));
+
+    expect(findings.map((finding) => finding.message)).toEqual([
+      'Hardcoded component prop "heading" found: "Billing settings"',
+      'Hardcoded component prop "subheading" found: "Manage your plan"',
+      'Hardcoded component prop "subtitle" found: "Current usage"',
+      'Hardcoded component prop "caption" found: "Updated today"',
+      'Hardcoded component prop "badgeText" found: "New"',
+      'Hardcoded component prop "buttonText" found: "Upgrade now"',
+      'Hardcoded component prop "linkText" found: "View plans"',
+      'Hardcoded component prop "ariaLabel" found: "Close dialog"',
+      'Hardcoded component prop "accessibilityLabel" found: "Open menu"',
+      'Hardcoded component prop "screenReaderLabel" found: "Loading dashboard"',
+      'Hardcoded component prop "emptyTitle" found: "No invoices yet"',
+      'Hardcoded component prop "errorTitle" found: "Payment failed"',
+      'Hardcoded component prop "successTitle" found: "Payment complete"',
+      'Hardcoded component prop "warningTitle" found: "Payment method expires soon"',
+    ]);
+  });
+
+  it("does not flag heading and accessibility text props on native lowercase elements", () => {
+    const findings = scan([
+      "export default function App() {",
+      "  return (",
+      "    <>",
+      "      <section heading=\"not-user-facing-native-prop\" />",
+      "      <div subtitle=\"not-user-facing-native-prop\" />",
+      "      <span caption=\"not-user-facing-native-prop\" />",
+      "      <button ariaLabel=\"not-user-facing-native-prop\" />",
+      "      <i accessibilityLabel=\"not-user-facing-native-prop\" />",
+      "      <span screenReaderLabel=\"not-user-facing-native-prop\" />",
+      "    </>",
+      "  );",
+      "}",
+    ].join("\n"));
+
+    expect(findings).toEqual([]);
   });
 
 });

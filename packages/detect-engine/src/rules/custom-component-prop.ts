@@ -19,7 +19,21 @@ const DEFAULT_COMPONENT_TEXT_PROPS = [
   "successMessage",
   "warningMessage",
   "loadingText",
-  "emptyMessage"
+  "emptyMessage",
+  "heading",
+  "subheading",
+  "subtitle",
+  "caption",
+  "badgeText",
+  "buttonText",
+  "linkText",
+  "ariaLabel",
+  "accessibilityLabel",
+  "screenReaderLabel",
+  "emptyTitle",
+  "errorTitle",
+  "successTitle",
+  "warningTitle"
 ];
 
 export interface ComponentTextPropOptions {
