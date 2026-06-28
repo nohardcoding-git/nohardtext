@@ -8,22 +8,29 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-test:
-    name: Build and Test
+  verify:
+    name: Build, test, and release checks
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9.0.0
+      - name: Enable pnpm
+        run: corepack enable
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -33,3 +40,15 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Check package versions
+        run: pnpm release:version
+
+      - name: Run release check
+        run: pnpm release:check
+
+      - name: Dry-run package publishing
+        run: pnpm release:pack
+
+      - name: Print publish plan
+        run: pnpm release:publish-plan
