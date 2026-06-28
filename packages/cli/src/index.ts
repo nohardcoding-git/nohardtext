@@ -23,6 +23,33 @@ const DEFAULT_IGNORED_DIRECTORIES = [
   "out",
 ];
 
+const DEFAULT_IGNORED_FILE_PATTERNS = [
+  ".stories.ts",
+  ".stories.tsx",
+  ".stories.js",
+  ".stories.jsx",
+  ".story.ts",
+  ".story.tsx",
+  ".story.js",
+  ".story.jsx",
+  ".test.ts",
+  ".test.tsx",
+  ".test.js",
+  ".test.jsx",
+  ".spec.ts",
+  ".spec.tsx",
+  ".spec.js",
+  ".spec.jsx",
+  ".demo.ts",
+  ".demo.tsx",
+  ".demo.js",
+  ".demo.jsx",
+  ".example.ts",
+  ".example.tsx",
+  ".example.js",
+  ".example.jsx"
+];
+
 const SEVERITY_ORDER: Severity[] = [
   "info",
   "low",
@@ -192,6 +219,25 @@ export function shouldSkipDirectory(
   return ignoredDirectories.has(directoryName);
 }
 
+export function getIgnoredFilePatterns(): string[] {
+  return DEFAULT_IGNORED_FILE_PATTERNS;
+}
+
+function normalizeFilePath(filePath: string): string {
+  return filePath.replace(/\\/g, "/").toLowerCase();
+}
+
+export function shouldSkipFile(
+  filePath: string,
+  ignoredFilePatterns = getIgnoredFilePatterns()
+): boolean {
+  const normalizedFilePath = normalizeFilePath(filePath);
+
+  return ignoredFilePatterns.some((pattern) =>
+    normalizedFilePath.endsWith(pattern.toLowerCase())
+  );
+}
+
 function isSupportedFile(filePath: string): boolean {
   return SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension));
 }
@@ -207,7 +253,9 @@ function collectFiles(
   const stat = statSync(targetPath);
 
   if (stat.isFile()) {
-    return isSupportedFile(targetPath) ? [targetPath] : [];
+    return isSupportedFile(targetPath) && !shouldSkipFile(targetPath)
+      ? [targetPath]
+      : [];
   }
 
   return readdirSync(targetPath).flatMap((entry) => {
@@ -222,7 +270,9 @@ function collectFiles(
       return collectFiles(fullPath, ignoredDirectories);
     }
 
-    return isSupportedFile(fullPath) ? [fullPath] : [];
+    return isSupportedFile(fullPath) && !shouldSkipFile(fullPath)
+      ? [fullPath]
+      : [];
   });
 }
 

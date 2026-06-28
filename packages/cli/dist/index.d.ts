@@ -40,6 +40,8 @@ declare function formatHelpOutput(): string;
 declare function loadConfig(cwd?: string): NoHardTextConfig;
 declare function getIgnoredDirectories(config?: NoHardTextConfig): Set<string>;
 declare function shouldSkipDirectory(directoryName: string, ignoredDirectories?: Set<string>): boolean;
+declare function getIgnoredFilePatterns(): string[];
+declare function shouldSkipFile(filePath: string, ignoredFilePatterns?: string[]): boolean;
 declare function shouldFail(findings: Finding[], failOn?: Severity): boolean;
 declare function runRulesList(): string;
 declare function createScanOutput(targetPath: string, cwd?: string, config?: NoHardTextConfig, options?: ScanOutputOptions): ScanOutput;
@@ -49,4 +51,4 @@ declare function runScan(targetPath: string, cwd?: string, options?: CliOptions,
 declare function runScanJson(targetPath: string, cwd?: string, config?: NoHardTextConfig, options?: ScanOutputOptions): string;
 declare function runCli(args?: string[]): Promise<void>;
 
-export { type CliOptions, type NoHardTextConfig, type ScanOutput, type ScanOutputOptions, createScanOutput, formatGithubAnnotationOutput, formatHelpOutput, formatScanOutput, formatVersionOutput, getCliBanner, getCliVersion, getIgnoredDirectories, loadConfig, runCli, runRulesList, runScan, runScanJson, shouldFail, shouldSkipDirectory };
+export { type CliOptions, type NoHardTextConfig, type ScanOutput, type ScanOutputOptions, createScanOutput, formatGithubAnnotationOutput, formatHelpOutput, formatScanOutput, formatVersionOutput, getCliBanner, getCliVersion, getIgnoredDirectories, getIgnoredFilePatterns, loadConfig, runCli, runRulesList, runScan, runScanJson, shouldFail, shouldSkipDirectory, shouldSkipFile };

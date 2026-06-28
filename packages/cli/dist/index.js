@@ -18,6 +18,32 @@ var DEFAULT_IGNORED_DIRECTORIES = [
   "build",
   "out"
 ];
+var DEFAULT_IGNORED_FILE_PATTERNS = [
+  ".stories.ts",
+  ".stories.tsx",
+  ".stories.js",
+  ".stories.jsx",
+  ".story.ts",
+  ".story.tsx",
+  ".story.js",
+  ".story.jsx",
+  ".test.ts",
+  ".test.tsx",
+  ".test.js",
+  ".test.jsx",
+  ".spec.ts",
+  ".spec.tsx",
+  ".spec.js",
+  ".spec.jsx",
+  ".demo.ts",
+  ".demo.tsx",
+  ".demo.js",
+  ".demo.jsx",
+  ".example.ts",
+  ".example.tsx",
+  ".example.js",
+  ".example.jsx"
+];
 var SEVERITY_ORDER = [
   "info",
   "low",
@@ -118,6 +144,18 @@ function getIgnoredDirectories(config = {}) {
 function shouldSkipDirectory(directoryName, ignoredDirectories = getIgnoredDirectories()) {
   return ignoredDirectories.has(directoryName);
 }
+function getIgnoredFilePatterns() {
+  return DEFAULT_IGNORED_FILE_PATTERNS;
+}
+function normalizeFilePath(filePath) {
+  return filePath.replace(/\\/g, "/").toLowerCase();
+}
+function shouldSkipFile(filePath, ignoredFilePatterns = getIgnoredFilePatterns()) {
+  const normalizedFilePath = normalizeFilePath(filePath);
+  return ignoredFilePatterns.some(
+    (pattern) => normalizedFilePath.endsWith(pattern.toLowerCase())
+  );
+}
 function isSupportedFile(filePath) {
   return SUPPORTED_EXTENSIONS.some((extension) => filePath.endsWith(extension));
 }
@@ -127,7 +165,7 @@ function collectFiles(targetPath, ignoredDirectories) {
   }
   const stat = statSync(targetPath);
   if (stat.isFile()) {
-    return isSupportedFile(targetPath) ? [targetPath] : [];
+    return isSupportedFile(targetPath) && !shouldSkipFile(targetPath) ? [targetPath] : [];
   }
   return readdirSync(targetPath).flatMap((entry) => {
     if (shouldSkipDirectory(entry, ignoredDirectories)) {
@@ -138,7 +176,7 @@ function collectFiles(targetPath, ignoredDirectories) {
     if (entryStat.isDirectory()) {
       return collectFiles(fullPath, ignoredDirectories);
     }
-    return isSupportedFile(fullPath) ? [fullPath] : [];
+    return isSupportedFile(fullPath) && !shouldSkipFile(fullPath) ? [fullPath] : [];
   });
 }
 function getRequiredOptionValue(args, optionName) {
@@ -434,11 +472,13 @@ export {
   getCliBanner,
   getCliVersion,
   getIgnoredDirectories,
+  getIgnoredFilePatterns,
   loadConfig,
   runCli,
   runRulesList,
   runScan,
   runScanJson,
   shouldFail,
-  shouldSkipDirectory
+  shouldSkipDirectory,
+  shouldSkipFile
 };

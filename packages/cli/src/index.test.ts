@@ -16,6 +16,7 @@ import {
   runCli,
   shouldFail,
   shouldSkipDirectory,
+  shouldSkipFile,
 } from "./index";
 import type { Finding } from "@nohardcoding/nohardtext-domain";
 
@@ -389,6 +390,68 @@ describe("@nohardcoding/nohardtext", () => {
         'Hardcoded component prop "message" found: "Saved successfully"',
       );
       expect(output).toContain('Hardcoded component prop "text" found: "New"');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+
+  it("skips common non-production React files by default", () => {
+    expect(shouldSkipFile("Button.stories.tsx")).toBe(true);
+    expect(shouldSkipFile("Button.story.tsx")).toBe(true);
+    expect(shouldSkipFile("Button.test.tsx")).toBe(true);
+    expect(shouldSkipFile("Button.spec.tsx")).toBe(true);
+    expect(shouldSkipFile("Button.demo.tsx")).toBe(true);
+    expect(shouldSkipFile("Button.example.tsx")).toBe(true);
+    expect(shouldSkipFile("Button.tsx")).toBe(false);
+  });
+
+  it("does not scan Storybook, test, demo, or example files by default", () => {
+    const dir = mkdtempSync(join(tmpdir(), "nohardtext-"));
+
+    try {
+      writeFileSync(
+        join(dir, "App.tsx"),
+        `
+          export default function App() {
+            return <button>Ship</button>;
+          }
+        `
+      );
+
+      writeFileSync(
+        join(dir, "Button.stories.tsx"),
+        `
+          export default function Story() {
+            return <button>Story text</button>;
+          }
+        `
+      );
+
+      writeFileSync(
+        join(dir, "Button.test.tsx"),
+        `
+          export default function TestFixture() {
+            return <button>Test text</button>;
+          }
+        `
+      );
+
+      writeFileSync(
+        join(dir, "Button.demo.tsx"),
+        `
+          export default function Demo() {
+            return <button>Demo text</button>;
+          }
+        `
+      );
+
+      const output = JSON.parse(runScanJson(dir, dir));
+
+      expect(output.scannedFiles).toBe(1);
+      expect(output.files).toEqual(["App.tsx"]);
+      expect(output.findings).toHaveLength(1);
+      expect(output.findings[0].message).toContain("Ship");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
