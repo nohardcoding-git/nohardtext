@@ -1,0 +1,84 @@
+name: NoHardText
+description: Detect hardcoded UI strings in React/TSX before they reach production.
+author: NoHardCoding
+
+branding:
+  icon: type
+  color: blue
+
+inputs:
+  path:
+    description: File or directory to scan.
+    required: false
+    default: src
+  fail-on:
+    description: Minimum severity that fails the action. Use critical, high, medium, low, info, or none.
+    required: false
+    default: high
+  github-annotations:
+    description: Emit GitHub Actions annotations.
+    required: false
+    default: "true"
+  json:
+    description: Emit JSON output.
+    required: false
+    default: "false"
+  output:
+    description: Write output to a file path.
+    required: false
+    default: ""
+  config:
+    description: Path to a NoHardText config file.
+    required: false
+    default: ""
+  version:
+    description: NoHardText npm package version to run.
+    required: false
+    default: latest
+
+outputs:
+  report-path:
+    description: Path to the generated report when the output input is set.
+    value: ${{ steps.run.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      name: Run NoHardText
+      shell: bash
+      env:
+        NHT_PATH: ${{ inputs.path }}
+        NHT_FAIL_ON: ${{ inputs.fail-on }}
+        NHT_GITHUB_ANNOTATIONS: ${{ inputs.github-annotations }}
+        NHT_JSON: ${{ inputs.json }}
+        NHT_OUTPUT: ${{ inputs.output }}
+        NHT_CONFIG: ${{ inputs.config }}
+        NHT_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+
+        args=("scan" "$NHT_PATH")
+
+        if [[ "$NHT_GITHUB_ANNOTATIONS" == "true" ]]; then
+          args+=("--github-annotations")
+        fi
+
+        if [[ "$NHT_FAIL_ON" != "none" && -n "$NHT_FAIL_ON" ]]; then
+          args+=("--fail-on" "$NHT_FAIL_ON")
+        fi
+
+        if [[ "$NHT_JSON" == "true" ]]; then
+          args+=("--json")
+        fi
+
+        if [[ -n "$NHT_OUTPUT" ]]; then
+          args+=("--output" "$NHT_OUTPUT")
+          echo "report-path=$NHT_OUTPUT" >> "$GITHUB_OUTPUT"
+        fi
+
+        if [[ -n "$NHT_CONFIG" ]]; then
+          args+=("--config" "$NHT_CONFIG")
+        fi
+
+        npx -y --package "@nohardcoding/nohardtext@$NHT_VERSION" nohardtext "${args[@]}"
