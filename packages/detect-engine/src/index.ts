@@ -13,6 +13,7 @@ export { detectJsxText } from "./rules/jsx-text";
 export { detectPlaceholderText } from "./rules/placeholder";
 export { detectTitleAttributeText } from "./rules/title";
 export { detectCustomComponentPropText } from "./rules/custom-component-prop";
+export { detectCrossFileDuplicates, crossFileDuplicateRuleMetadata } from "./rules/cross-file-duplicate";
 export { getBuiltInRuleMetadata } from "./rules/registry";
 
 export function sortFindingsByLocation(findings: Finding[]): Finding[] {

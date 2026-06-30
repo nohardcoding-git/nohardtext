@@ -31,6 +31,15 @@ export interface Finding {
   category: Category;
   message: string;
   explanation: string;
+  /**
+   * The raw detected text or literal value, when the finding is about a
+   * specific string. Optional for backward compatibility with existing
+   * rule output, but should be populated by any rule that detects a
+   * concrete value — cross-cutting rules (e.g. cross-file duplicate
+   * detection) depend on this being structured data rather than something
+   * parsed back out of `message`.
+   */
+  value?: string;
   location: SourceLocation;
   fixable: boolean;
   suggestions: Suggestion[];

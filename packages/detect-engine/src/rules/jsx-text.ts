@@ -21,6 +21,7 @@ function createJsxTextFinding(filePath: string, node: LocalizableTextNode, index
     category: "localization",
     message: `Hardcoded JSX text found: "${node.text}"`,
     explanation: "User-facing JSX text should be moved to localization files.",
+    value: node.text,
     location: {
       filePath,
       startLine: node.startLine,

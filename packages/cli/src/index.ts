@@ -3,7 +3,7 @@
 import { existsSync, mkdirSync, readFileSync, statSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import type { Finding, Severity } from "@nohardcoding/nohardtext-domain";
-import { detect, getBuiltInRuleMetadata } from "@nohardcoding/nohardtext-detect-engine";
+import { detect, getBuiltInRuleMetadata, detectCrossFileDuplicates, crossFileDuplicateRuleMetadata } from "@nohardcoding/nohardtext-detect-engine";
 import {
   createReportSummary,
   type ReportSummary,
@@ -113,6 +113,10 @@ export interface ScanOutputOptions {
 
 export function getCliBanner(): string {
   return "NoHardText CLI";
+}
+
+function getAllRuleMetadata() {
+  return [...getBuiltInRuleMetadata(), crossFileDuplicateRuleMetadata];
 }
 
 export function getCliVersion(): string {
@@ -360,7 +364,7 @@ export function shouldFail(findings: Finding[], failOn?: Severity): boolean {
 }
 
 export function runRulesList(): string {
-  const rules = getBuiltInRuleMetadata();
+  const rules = getAllRuleMetadata();
 
   const lines = [getCliBanner(), "", "Supported rules:", ""];
 
@@ -386,7 +390,7 @@ export function createScanOutput(
   const files = collectFiles(targetPath, ignoredDirectories);
   const scannedFilePaths = files.map((filePath) => relative(cwd, filePath));
 
-  const findings = files.flatMap((filePath) => {
+  const perFileFindings = files.flatMap((filePath) => {
     const sourceText = readFileSync(filePath, "utf8");
 
     return detect({
@@ -397,6 +401,9 @@ export function createScanOutput(
       },
     }).findings;
   });
+
+  const crossFileFindings = detectCrossFileDuplicates(perFileFindings);
+  const findings = [...perFileFindings, ...crossFileFindings];
 
   const summary = createReportSummary({ findings });
   const failOn = options.failOn ?? config.failOn;
@@ -496,7 +503,7 @@ export function formatScanOutput(
   options: CliOptions = { json: false },
 ): string {
   const ruleMetadata = new Map(
-    getBuiltInRuleMetadata().map((rule) => [rule.id, rule]),
+    getAllRuleMetadata().map((rule) => [rule.id, rule]),
   );
 
   const summary = output.summary;
@@ -567,7 +574,7 @@ function getGithubAnnotationLevel(severity: Severity): "notice" | "warning" | "e
 
 export function formatGithubAnnotationOutput(output: ScanOutput): string {
   const ruleMetadata = new Map(
-    getBuiltInRuleMetadata().map((rule) => [rule.id, rule]),
+    getAllRuleMetadata().map((rule) => [rule.id, rule]),
   );
 
   const lines = output.findings.map((finding) => {

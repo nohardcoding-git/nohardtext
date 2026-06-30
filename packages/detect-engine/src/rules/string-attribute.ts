@@ -38,6 +38,7 @@ export function detectStringAttribute(
       category: config.category ?? "localization",
       message: `${config.messagePrefix}: "${node.value}"`,
       explanation: config.explanation,
+      value: node.value,
       location: {
         filePath,
         startLine: node.startLine,
